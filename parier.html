@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Duel Royale — Parier</title>
+<style>
+  :root{
+    --bg:#0c0d12; --panel:#181a24; --line:#2a2c3a; --gold:#c9a86a; --gold-bright:#e9cf8f; --ink:#e8e6df; --dim:#8b8c9a;
+    --fire:#d1543b; --ok:#7fd18b;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: light){ :root{ --bg:#f2efe6; --panel:#fbf9f2; --line:#d8d0ba; --ink:#232016; --dim:#6b6555; } }
+  *{box-sizing:border-box;}
+  body{margin:0; min-height:100vh; background:radial-gradient(ellipse at 50% -10%, #26283a 0%, var(--bg) 55%) fixed; color:var(--ink);
+       font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;}
+  @media (prefers-color-scheme: light){ body{background:var(--bg);} }
+  .wrap{max-width:760px; margin:0 auto; padding:18px 14px 70px;}
+  h1{margin:0; text-align:center; font-size:26px; letter-spacing:.06em; color:var(--gold-bright); font-weight:600;}
+  .sub{text-align:center; color:var(--dim); font-size:13px; margin:4px 0 16px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px;}
+  .panel h2{margin:0 0 10px; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-bright); font-weight:600;}
+  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;}
+  input[type=text], input[type=password], input[type=number]{
+    font-family:inherit; font-size:16px; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:9px 10px; min-width:0; flex:1 1 140px;}
+  input[type=number]{width:110px; flex:0 0 110px;}
+  input:focus-visible, button:focus-visible{outline:2px solid var(--gold-bright); outline-offset:1px;}
+  button{font-family:inherit; font-size:14px; cursor:pointer; background:var(--panel); color:var(--gold-bright); border:1px solid var(--gold); border-radius:6px; padding:9px 14px;}
+  button:hover:not(:disabled){box-shadow:0 0 10px rgba(201,168,106,.3);}
+  button:disabled{opacity:.45; cursor:default;}
+  button.primary{background:var(--gold); color:#14120c; font-weight:600;}
+  button.ghost{border-color:var(--line); color:var(--dim); font-size:12px; padding:6px 10px;}
+  .hint{font-size:12px; color:var(--dim); font-style:italic;}
+  .err{color:var(--fire); font-size:13px; min-height:18px;} .good{color:var(--ok);}
+  .me{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  .me b{color:var(--gold-bright);} .bal{font-size:22px; color:var(--gold-bright);}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin:8px 0 12px;}
+  .card{position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 6px; text-align:center; border:1px solid var(--line); border-radius:8px; background:var(--bg); cursor:pointer; color:var(--ink);}
+  .card:hover{border-color:var(--gold);}
+  .card.sel{border-color:var(--gold-bright); box-shadow:0 0 0 2px rgba(233,207,143,.35) inset;}
+  .card .pic{width:52px; height:52px; border-radius:50%; background:#222536 center/cover no-repeat; display:flex; align-items:center; justify-content:center; font-size:24px; border:1px solid var(--line); overflow:hidden;}
+  .card .pic img{width:100%; height:100%; object-fit:cover;}
+  .card .nm{font-size:13px; line-height:1.2; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .card .od{font-size:15px; color:var(--gold-bright); font-weight:600;} .card .pc{font-size:11px; color:var(--dim);}
+  .card .mine{position:absolute; top:4px; right:6px; font-size:12px;}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{font-weight:600; color:var(--dim); text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:4px 6px; border-bottom:1px solid var(--line);}
+  td{padding:5px 6px; border-bottom:1px dashed var(--line);} td.num,th.num{text-align:right; white-space:nowrap;}
+  .won{color:var(--ok);} .lost{color:var(--fire);}
+  .banner{padding:12px 14px; border-radius:8px; border:1px solid var(--gold); background:linear-gradient(180deg, rgba(201,168,106,.14), var(--panel)); margin-bottom:8px;}
+  .tablewrap{overflow-x:auto;}
+  .quick{display:flex; gap:6px; flex-wrap:wrap;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Duel Royale</h1>
+  <div class="sub">Mise tes jetons sur le dernier survivant</div>
+
+  <section class="panel" id="authPanel" hidden>
+    <h2>Connexion</h2>
+    <div class="row">
+      <input type="text" id="pseudo" placeholder="Ton pseudo" maxlength="20" autocomplete="username" autocapitalize="off">
+      <input type="password" id="code" placeholder="Code secret (6 caractères min.)" autocomplete="current-password">
+    </div>
+    <div class="row">
+      <button class="primary" id="loginBtn">Me connecter</button>
+      <button id="signupBtn">Créer mon compte</button>
+    </div>
+    <div class="err" id="authErr" role="alert"></div>
+    <div class="hint">Nouveau ? Choisis un pseudo et un code secret, puis « Créer mon compte » : tu démarres avec 1 000 jetons. Ce sont des jetons virtuels, pour le fun.</div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="panel me">
+      <div><b id="mePseudo"></b><div class="hint" id="meSub"></div></div>
+      <div style="text-align:right"><div class="bal"><span id="meBal">0</span> 🪙</div>
+        <button class="ghost" id="rescueBtn" hidden>Dépannage +500</button> <button class="ghost" id="logoutBtn">Déconnexion</button></div>
+    </div>
+
+    <div class="panel" id="roundPanel"></div>
+    <div class="panel"><h2>Classement</h2><div class="tablewrap"><table><thead><tr><th>#</th><th>Joueur</th><th class="num">Jetons</th></tr></thead><tbody id="board"></tbody></table></div></div>
+    <div class="panel"><h2>Mes derniers paris</h2><div class="tablewrap"><table><thead><tr><th>Manche</th><th>Monstre</th><th class="num">Mise</th><th class="num">Cote</th><th class="num">Résultat</th></tr></thead><tbody id="mine"></tbody></table></div></div>
+  </section>
+
+  <section class="panel" id="offline" hidden>
+    <h2>Pas encore configuré</h2>
+    <p>Le fichier <b>config.js</b> est absent ou incomplet (adresse Supabase + clé). Voir le guide d'installation.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="duel-online.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n).toLocaleString('fr-FR');
+const ICON = {Dragon:'🐉', Warrior:'⚔️', Spellcaster:'🔮', Fiend:'😈', Beast:'🐺', 'Beast-Warrior':'🦁', Machine:'⚙️', Insect:'🐛', Rock:'🪨', Thunder:'⚡', 'Sea Serpent':'🐍', Zombie:'💀', Fairy:'🧚', Plant:'🌿', Aqua:'🌊', Pyro:'🔥'};
+const DO = window.DuelOnline;
+let me = null, selected = null, busy = false, timer = null, lastKey = '';
+
+function show(id, on){ $(id).hidden = !on; }
+function msg(el, text, ok){ el.textContent = text || ''; el.className = ok ? 'err good' : 'err'; }
+
+async function doAuth(kind){
+  const p = $('pseudo').value, c = $('code').value;
+  msg($('authErr'), kind === 'up' ? 'Création…' : 'Connexion…', true);
+  try{ if(kind === 'up') await DO.signUp(p, c); else await DO.signIn(p, c); msg($('authErr'), ''); await boot(); }
+  catch(e){ msg($('authErr'), e.message); }
+}
+
+function monsterCard(m, betMid, canBet){
+  const pic = m.img ? `<img src="${esc(m.img)}" alt="" onerror="this.replaceWith(document.createTextNode('${ICON[m.type] || '❖'}'))">` : (ICON[m.type] || '❖');
+  const pc = m.p ? (m.p * 100).toFixed(m.p < 0.1 ? 1 : 0) + ' %' : '';
+  return `<button class="card${selected === m.id ? ' sel' : ''}" data-mid="${esc(m.id)}" ${canBet ? '' : 'disabled'}>
+    ${betMid === m.id ? '<span class="mine">⭐</span>' : ''}<div class="pic">${pic}</div><div class="nm">${esc(m.name)}</div><div class="od">x${Number(m.odd).toFixed(1)}</div><div class="pc">${pc}</div></button>`;
+}
+
+function renderRound(round, closed, bets, prevStake){
+  const box = $('roundPanel');
+  if(!round){
+    let h = '<h2>Manche</h2>';
+    if(closed){
+      const mine = (window.__mineByRound || {})[closed.id];
+      const win = closed.status === 'cancelled' ? null : (closed.monsters || []).find(m => m.id === closed.winner_id);
+      h += `<div class="banner">${closed.status === 'cancelled' ? 'Manche annulée : les mises ont été remboursées.' : win ? `🏆 <b>${esc(win.name)}</b> a remporté la dernière manche.` : 'Match nul : les mises ont été remboursées.'}`
+        + (mine && closed.status === 'finished' ? `<br>${mine.payout > 0 ? `<span class="won">Tu as gagné ${fmt(mine.payout - mine.amount)} 🪙</span>` : `<span class="lost">Tu as perdu ${fmt(mine.amount)} 🪙</span>`}` : '') + '</div>';
+    }
+    box.innerHTML = h + '<p class="hint">Aucune manche ouverte. Cette page se met à jour toute seule : reste là, l\'hôte va bientôt ouvrir les mises.</p>';
+    return;
+  }
+  const myBet = bets.find(b => b.player_id === me.id);
+  const monsters = (round.monsters || []).slice().sort((a, b) => a.odd - b.odd);
+  if(round.status === 'open'){
+    if(selected && !monsters.some(m => m.id === selected)) selected = null;
+    if(!selected && myBet) selected = myBet.monster_id;
+    const cur = monsters.find(m => m.id === selected);
+    box.innerHTML = `<h2>Les mises sont ouvertes — manche n°${round.id}</h2>
+      <div class="hint">${bets.length} pari(s) déjà placé(s). Choisis un monstre, puis ta mise.</div>
+      <div class="grid">${monsters.map(m => monsterCard(m, myBet && myBet.monster_id, true)).join('')}</div>
+      <div class="row">
+        <input type="number" id="stake" min="1" step="10" value="${prevStake != null && prevStake !== '' ? esc(prevStake) : (myBet ? myBet.amount : Math.min(100, me.balance))}" aria-label="Mise">
+        <div class="quick">${[50, 100, 250, 500].map(v => `<button class="ghost" data-q="${v}">${v}</button>`).join('')}<button class="ghost" data-q="all">Tout</button></div>
+      </div>
+      <div class="row"><button class="primary" id="betBtn" ${cur ? '' : 'disabled'}>${myBet ? 'Modifier mon pari' : 'Parier'}${cur ? ' sur ' + esc(cur.name) : ''}</button>
+        ${myBet ? '<button class="ghost" id="unbetBtn">Retirer mon pari</button>' : ''}<span class="err" id="betErr" role="alert"></span></div>
+      ${myBet ? `<div class="hint">Ton pari : <b>${fmt(myBet.amount)} 🪙</b> sur ${esc((monsters.find(m => m.id === myBet.monster_id) || {}).name || '?')} (x${Number(myBet.odd).toFixed(1)}) — gain si victoire : ${fmt(Math.round(myBet.amount * myBet.odd))} 🪙</div>` : ''}`;
+  } else { // locked
+    box.innerHTML = `<h2>Bataille en cours — mises closes (manche n°${round.id})</h2>
+      <div class="hint">Regarde le combat chez l'hôte. Les gains seront versés automatiquement à la fin.</div>
+      <div class="tablewrap"><table><thead><tr><th>Joueur</th><th>Monstre</th><th class="num">Mise</th><th class="num">Cote</th></tr></thead><tbody>
+      ${bets.map(b => `<tr><td>${esc((b.players || {}).pseudo)}</td><td>${esc((monsters.find(m => m.id === b.monster_id) || {}).name || '?')}</td><td class="num">${fmt(b.amount)}</td><td class="num">x${Number(b.odd).toFixed(1)}</td></tr>`).join('') || '<tr><td colspan="4" class="hint">Aucun pari.</td></tr>'}
+      </tbody></table></div>`;
+  }
+}
+
+async function refresh(force){
+  if(!me || busy) return;
+  try{
+    me = await DO.me(); if(!me){ return boot(); }
+    $('mePseudo').textContent = me.pseudo + (me.is_host ? ' · hôte' : ''); $('meBal').textContent = fmt(me.balance);
+    $('rescueBtn').hidden = me.balance >= 100;
+    const [round, closed, board, mine] = await Promise.all([DO.activeRound(), DO.lastClosedRound(), DO.leaderboard(), DO.myBets(me.id)]);
+    window.__mineByRound = Object.fromEntries(mine.map(b => [b.round_id, b]));
+    const bets = round ? await DO.bets(round.id) : [];
+    $('board').innerHTML = board.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.pseudo)}${p.pseudo === me.pseudo ? ' (toi)' : ''}</td><td class="num">${fmt(p.balance)}</td></tr>`).join('');
+    $('mine').innerHTML = mine.map(b => {
+      const r = b.rounds || {}, m = (r.monsters || []).find(x => x.id === b.monster_id);
+      let res = '<span class="hint">en cours</span>';
+      if(r.status === 'cancelled' || (r.status === 'finished' && !r.winner_id)) res = '<span class="hint">remboursé</span>';
+      else if(r.status === 'finished') res = b.payout > 0 ? `<span class="won">+${fmt(b.payout - b.amount)}</span>` : `<span class="lost">−${fmt(b.amount)}</span>`;
+      return `<tr><td>n°${b.round_id}</td><td>${esc(m ? m.name : '?')}</td><td class="num">${fmt(b.amount)}</td><td class="num">x${Number(b.odd).toFixed(1)}</td><td class="num">${res}</td></tr>`;
+    }).join('') || '<tr><td colspan="5" class="hint">Pas encore de pari.</td></tr>';
+    // ne reconstruit la zone de mise que si les données ont changé (évite de perdre la saisie en cours)
+    const key = JSON.stringify([round && [round.id, round.status], closed && [closed.id, closed.status], bets.map(b => [b.id, b.amount, b.monster_id]), me.balance, selected]);
+    if(force || key !== lastKey){ lastKey = key; const prev = $('stake') ? $('stake').value : null; renderRound(round, closed, bets, prev); window.__round = round; }
+  }catch(e){ $('roundPanel').innerHTML = `<p class="err">Connexion au serveur impossible : ${esc(e.message)}</p>`; }
+}
+
+$('roundPanel').addEventListener('click', async e => {
+  const card = e.target.closest('.card'), q = e.target.closest('[data-q]');
+  if(card){ selected = card.dataset.mid; return refresh(true); }
+  if(q){ const v = q.dataset.q === 'all' ? me.balance : Number(q.dataset.q); $('stake').value = v; return; }
+  const round = window.__round; if(!round) return;
+  if(e.target.id === 'betBtn' || e.target.id === 'unbetBtn'){
+    busy = true; const err = $('betErr'); msg(err, '');
+    try{
+      if(e.target.id === 'betBtn') await DO.placeBet(round.id, selected, Number($('stake').value));
+      else { await DO.cancelBet(round.id); selected = null; }
+    }catch(ex){ busy = false; return msg(err, ex.message); }
+    busy = false; refresh(true);
+  }
+});
+$('rescueBtn').onclick = async () => { try{ await DO.claimRescue(); }catch(e){ alert(e.message); } refresh(true); };
+$('logoutBtn').onclick = async () => { await DO.signOut(); me = null; clearInterval(timer); boot(); };
+$('loginBtn').onclick = () => doAuth('in'); $('signupBtn').onclick = () => doAuth('up');
+$('code').addEventListener('keydown', e => { if(e.key === 'Enter') doAuth('in'); });
+
+async function boot(){
+  if(!DO){ show('offline', true); show('authPanel', false); show('app', false); return; }
+  me = await DO.me();
+  show('authPanel', !me); show('app', !!me);
+  clearInterval(timer);
+  if(me){ await refresh(true); timer = setInterval(() => { if(!document.hidden) refresh(); }, 3000); }
+}
+boot();
+</script>
+</body>
+</html>
