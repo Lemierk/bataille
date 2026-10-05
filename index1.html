@@ -25,17 +25,17 @@
     color:var(--ink); font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
   }
   *{box-sizing:border-box;}
-  .wrap{max-width:1700px; margin:0 auto; padding:10px 14px 50px;}
-  header{text-align:center; margin-bottom:6px;}
+  .wrap{max-width:1100px; margin:0 auto; padding:22px 16px 90px;}
+  header{text-align:center; margin-bottom:14px;}
   h1{
-    letter-spacing:.06em; font-weight:600; font-size:clamp(20px,3.4vw,30px);
-    margin:0 0 2px; color:var(--gold-bright); text-shadow:0 0 18px rgba(201,168,106,.35);
+    letter-spacing:.06em; font-weight:600; font-size:clamp(24px,5vw,38px);
+    margin:0 0 4px; color:var(--gold-bright); text-shadow:0 0 18px rgba(201,168,106,.35);
   }
-  header p{margin:0; color:var(--dim); font-size:13px; font-style:italic;}
+  header p{margin:0; color:var(--dim); font-size:14px; font-style:italic;}
 
   .controls{
     display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;
-    margin:8px 0 8px; padding:8px 14px; background:var(--panel); border:1px solid var(--line);
+    margin:16px 0 18px; padding:12px 16px; background:var(--panel); border:1px solid var(--line);
     border-radius:10px;
   }
   button{
@@ -52,13 +52,13 @@
   input[type=range]{accent-color:var(--gold);}
 
   #status{
-    text-align:center; min-height:20px; margin-bottom:8px; font-size:15px; color:var(--gold-bright);
+    text-align:center; min-height:22px; margin-bottom:14px; font-size:15px; color:var(--gold-bright);
     font-style:italic;
   }
 
   /* ---- 2D ARENA ---- */
   #arena-wrap{
-    position:relative; width:100%; height:clamp(460px, calc(100vh - 200px), 1100px); height:clamp(460px, calc(100svh - 200px), 1100px); border-radius:14px;
+    position:relative; width:100%; height:min(70vh,620px); border-radius:14px;
     border:1px solid var(--line); box-shadow: inset 0 0 70px rgba(0,0,0,.65);
     overflow:hidden; touch-action:none; background:#0d0e15;
   }
@@ -172,7 +172,7 @@
     border:1px solid var(--line); border-radius:6px; padding:8px 10px; max-width:100%;
   }
   input[type=text], input[type=password]{flex:1 1 140px; min-width:0;}
-  #online{margin:0 0 8px; padding:8px 14px;} #online summary{cursor:pointer; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-bright); font-weight:600;} #online[open] summary{margin-bottom:8px;} #onState{margin:4px 0;} #onLink{color:var(--gold-bright); word-break:break-all;}
+  #online{margin:0 0 14px;} #onState{margin:4px 0;} #onLink{color:var(--gold-bright); word-break:break-all;}
   input[type=number]{width:96px;}
   input:focus-visible, select:focus-visible{outline:2px solid var(--gold-bright); outline-offset:1px;}
   select:disabled, input:disabled{opacity:.5;}
@@ -259,11 +259,11 @@
 <div class="wrap">
   <header>
     <h1>Duel Royale</h1>
-    <p>Les anciens monstres s'affrontent dans l'arène. Un seul survivra.</p>
+    <p>Seize anciens monstres lâchés dans l'arène. Un seul survivra.</p>
   </header>
 
-  <details id="online" class="panel" open hidden>
-    <summary>Mode en ligne (hôte)</summary>
+  <section id="online" class="panel" hidden aria-label="Mode en ligne">
+    <h2>Mode en ligne (hôte)</h2>
     <div id="onLogin" class="row">
       <input type="text" id="onPseudo" placeholder="Pseudo hôte" maxlength="20" autocomplete="username">
       <input type="password" id="onCode" placeholder="Code secret" autocomplete="current-password">
@@ -280,7 +280,38 @@
       <div id="onState" class="hint" role="status"></div>
       <div class="hint">Lien à donner à tes amis : <b id="onLink"></b></div>
     </div>
-  </details>
+  </section>
+
+  <section id="bets" aria-label="Paris">
+    <div class="panel">
+      <h2>Joueurs</h2>
+      <div class="row">
+        <input type="text" id="newPlayer" placeholder="Prénom d'un ami" maxlength="14" autocomplete="off" aria-label="Nom du joueur">
+        <button id="addPlayerBtn">Ajouter</button>
+      </div>
+      <div class="chips" id="playerList"></div>
+      <div class="hint">Chacun démarre avec 1 000 jetons. Les soldes sont gardés d'une bataille à l'autre.</div>
+      <div class="row" style="margin:12px 0 0"><button id="resetBalances" class="ghost">Réinitialiser les soldes</button></div>
+    </div>
+    <div class="panel">
+      <h2>Parier sur le dernier survivant</h2>
+      <div class="row">
+        <select id="betPlayer" aria-label="Joueur"></select>
+        <select id="betMonster" class="grow" aria-label="Monstre"></select>
+      </div>
+      <div class="row">
+        <input type="number" id="betStake" value="100" min="1" step="10" aria-label="Mise">
+        <button id="betBtn">Parier</button>
+        <span id="betNote" class="hint" role="status"></span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Joueur</th><th>Monstre</th><th class="num">Mise</th><th class="num">Cote</th><th class="num">Gain</th><th></th></tr></thead>
+          <tbody id="betsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 
   <div class="controls">
     <button id="toggleBtn">Lancer le duel</button>
@@ -290,7 +321,7 @@
     </label>
   </div>
 
-  <div id="status"></div>
+  <div id="status">16 monstres entrent dans l'arène.</div>
 
   <div id="arena-wrap">
     <div id="arena-field"></div>
@@ -607,7 +638,7 @@ const MONSTERS = [
 const arenaWrap = document.getElementById('arena-wrap');
 const fx = document.getElementById('fx');
 let fighters = [];
-let running = false, settled = false, battleStarted = false;
+let running = false;
 let rafId = null;
 let lastT = 0;
 const RADIUS = 30, ATTACK_RANGE = 62, BASE_SPEED = 46, PLATFORM_INSET = 0.07;
@@ -809,35 +840,17 @@ function spawnBoom(x, y, color, kind){
   fx.appendChild(im); setTimeout(()=>im.remove(), 340);
 }
 
-// Répartit n monstres sans qu'ils se chevauchent (distance mini, resserrée automatiquement si l'arène est petite)
-function placeFighters(n, b){
-  const w = Math.max(1, b.maxX - b.minX), h = Math.max(1, b.maxY - b.minY);
-  let minD = Math.min(130, Math.sqrt(w*h/n) * 0.9);
-  const pts = [];
-  while(pts.length < n){
-    let ok = false;
-    for(let t = 0; t < 80 && !ok; t++){
-      const x = b.minX + Math.random()*w, y = b.minY + Math.random()*h;
-      if(pts.every(p => Math.hypot(p[0]-x, p[1]-y) >= minD)){ pts.push([x, y]); ok = true; }
-    }
-    if(!ok) minD *= 0.93;
-  }
-  return pts;
-}
-
 function initState(){
   const b = platformBounds();
   fx.innerHTML = '';
-  const pts = placeFighters(MONSTERS.length, b);
-  const arenaScale = Math.max(0.8, Math.min(1.6, arenaWrap.clientWidth / 1000));   // arène plus grande -> monstres un peu plus rapides
   fighters = MONSTERS.map((m,i)=>{
     const el = document.createElement('div');
     el.className = 'token';
     el.id = 'tok-'+i;
     const f = {
       ...m, id:i, hp:m.atk+m.def, maxHp:m.atk+m.def, alive:true,
-      x: pts[i][0], y: pts[i][1],
-      speed: (BASE_SPEED + (8 - m.level)*3 + Math.random()*8) * arenaScale,
+      x: b.minX + Math.random()*(b.maxX-b.minX), y: b.minY + Math.random()*(b.maxY-b.minY),
+      speed: BASE_SPEED + (8 - m.level)*3 + Math.random()*8,
       cooldown: Math.random()*600, facingLeft:false, el,
     };
     el.innerHTML = cardHTML(f);
@@ -854,8 +867,7 @@ function initState(){
   document.getElementById('toggleBtn').disabled = false;
   document.getElementById('log').innerHTML = '';
   document.getElementById('status').textContent = MONSTERS.length + ' monstres entrent dans l\'arène.';
-  settled = false; battleStarted = false;
-  const rs = document.getElementById('results'); rs.hidden = true; rs.innerHTML = '';
+  resetBetsRound();
 }
 
 function renderPositions(){
@@ -950,11 +962,11 @@ function step(t){
     if(alive.length === 1){
       document.getElementById('status').textContent = alive[0].name + ' remporte le duel royale !';
       logLine('🏆 ' + alive[0].name + ' est le dernier debout.', true);
-      settled = true;
+      settleBets(alive[0].id);
       if(window.onlineAfterFinish) window.onlineAfterFinish(alive[0].id);
     } else {
       document.getElementById('status').textContent = 'Match nul — plus aucun monstre debout.';
-      settled = true;
+      settleBets(null);
       if(window.onlineAfterFinish) window.onlineAfterFinish(null);
     }
     return;
@@ -1011,7 +1023,7 @@ document.getElementById('toggleBtn').addEventListener('click', async ()=>{
     if(!ok) return;
   }
   running = !running;
-  if(running) battleStarted = true;
+  if(running) lockBets();
   document.getElementById('toggleBtn').textContent = running ? 'Mettre en pause' : 'Reprendre';
   if(running){ lastT = performance.now(); rafId = requestAnimationFrame(step); }
   else cancelAnimationFrame(rafId);
@@ -1019,16 +1031,14 @@ document.getElementById('toggleBtn').addEventListener('click', async ()=>{
 document.getElementById('restartBtn').addEventListener('click', initState);
 window.addEventListener('resize', ()=>{
   const b = platformBounds();
-  if(!battleStarted){                       // avant le début : on re-répartit sans chevauchement
-    const pts = placeFighters(fighters.length, b);
-    fighters.forEach((f,i)=>{ f.x = pts[i][0]; f.y = pts[i][1]; });
-  } else fighters.forEach(f=>{ f.x=Math.max(b.minX,Math.min(f.x,b.maxX)); f.y=Math.max(b.minY,Math.min(f.y,b.maxY)); });
+  fighters.forEach(f=>{ f.x=Math.max(b.minX,Math.min(f.x,b.maxX)); f.y=Math.max(b.minY,Math.min(f.y,b.maxY)); });
   renderPositions();
 });
 
-/* ================= COTES ================= */
-const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = n => Math.round(n).toLocaleString('fr-FR');
+/* ================= PARIS ================= */
+const START_BALANCE = 1000;
+const LS_KEY = 'duelroyale-players-v1';
+
 // Cotes estimées : 800 batailles simulées (mêmes formules de dégâts), cote = 0.9 / probabilité de victoire.
 function computeOdds(){
   const N = 800, wins = new Array(MONSTERS.length).fill(0);
@@ -1051,7 +1061,151 @@ function computeOdds(){
 }
 const ODDS = computeOdds();
 
-initState();   // premier affichage des monstres
+let players = [];
+try{ players = JSON.parse(localStorage.getItem(LS_KEY)) || []; }catch(e){ players = []; }
+players = players.filter(p=>p && typeof p.name==='string' && Number.isFinite(p.balance));
+let bets = [], locked = false, settled = false;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Math.round(n).toLocaleString('fr-FR');
+const note = msg => { $('betNote').textContent = msg; };
+function savePlayers(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(players)); }catch(e){} }
+
+function fillMonsterSelect(){
+  const order = MONSTERS.map((_,i)=>i).sort((a,b)=>ODDS[a].odd-ODDS[b].odd);
+  $('betMonster').innerHTML = order.map(i=>{
+    const pct = (ODDS[i].p*100).toFixed(ODDS[i].p < 0.1 ? 1 : 0);
+    return `<option value="${i}">${esc(MONSTERS[i].name)} — cote x${ODDS[i].odd.toFixed(1)} (${pct}%)</option>`;
+  }).join('');
+}
+
+function renderPlayers(){
+  const cur = $('betPlayer').value;
+  $('playerList').innerHTML = players.length ? players.map(p=>
+    `<span class="chip"><b>${esc(p.name)}</b> ${fmt(p.balance)} 🪙${locked ? '' : `<button class="x" data-del="${esc(p.name)}" aria-label="Retirer ${esc(p.name)}">×</button>`}</span>`
+  ).join('') : '<span class="hint">Ajoute au moins un joueur pour commencer.</span>';
+  $('betPlayer').innerHTML = players.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  if(players.some(p=>p.name===cur)) $('betPlayer').value = cur;
+  setBetUI();
+}
+
+function renderBets(){
+  $('betsBody').innerHTML = bets.length ? bets.map(b=>{
+    const o = ODDS[b.monsterId].odd;
+    return `<tr><td>${esc(b.player)}</td><td>${esc(MONSTERS[b.monsterId].name)}</td><td class="num">${fmt(b.stake)}</td><td class="num">x${o.toFixed(1)}</td><td class="num">${fmt(b.stake*o)}</td><td>${locked ? '' : `<button class="x" data-cancel="${esc(b.player)}" aria-label="Annuler le pari de ${esc(b.player)}">×</button>`}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="hint">Aucun pari pour l\'instant.</td></tr>';
+  updateTags();
+}
+
+function updateTags(){
+  fighters.forEach(f=>{
+    const bt = f.el.querySelector('.bt');
+    if(!bt) return;
+    const who = bets.filter(b=>b.monsterId===f.id).map(b=>b.player.charAt(0).toUpperCase());
+    bt.textContent = who.length ? '🎲' + who.join('') : '';
+  });
+}
+
+function setBetUI(){
+  ['betPlayer','betMonster','betStake','newPlayer','addPlayerBtn','resetBalances'].forEach(id=>{ $(id).disabled = locked; });
+  $('betBtn').disabled = locked || !players.length;
+  if(locked) note('Paris fermés — que le meilleur gagne !');
+}
+
+function addPlayer(){
+  if(locked) return;
+  const name = $('newPlayer').value.trim().slice(0,14);
+  if(!name) return;
+  if(players.some(p=>p.name.toLowerCase()===name.toLowerCase())) return note('Ce joueur existe déjà.');
+  players.push({name, balance:START_BALANCE});
+  $('newPlayer').value = '';
+  savePlayers(); renderPlayers(); note('');
+}
+
+function placeBet(){
+  if(locked) return;
+  const name = $('betPlayer').value, mid = Number($('betMonster').value);
+  const stake = Math.floor(Number($('betStake').value));
+  const pl = players.find(p=>p.name===name);
+  if(!pl) return note('Choisis un joueur.');
+  if(!(stake > 0)) return note('Mise invalide.');
+  if(stake > pl.balance) return note(`${pl.name} n'a que ${fmt(pl.balance)} jetons.`);
+  bets = bets.filter(b=>b.player!==name);
+  bets.push({player:name, monsterId:mid, stake});
+  renderBets();
+  note(`Pari enregistré pour ${pl.name}.`);
+}
+
+function lockBets(){
+  if(locked) return;
+  locked = true;
+  renderPlayers(); renderBets();
+}
+
+function resetBetsRound(){
+  bets = []; locked = false; settled = false;
+  $('results').hidden = true; $('results').innerHTML = '';
+  note('');
+  renderPlayers(); renderBets();
+}
+
+function settleBets(winnerId){
+  if(settled) return;
+  settled = true;
+  if(!bets.length) return;
+  let html;
+  if(winnerId === null){
+    html = '<h2>Match nul</h2><p>Aucun survivant : toutes les mises sont remboursées.</p>';
+  } else {
+    const lines = bets.map(b=>{
+      const pl = players.find(p=>p.name===b.player);
+      if(!pl) return '';
+      const won = b.monsterId === winnerId;
+      const delta = won ? Math.round(b.stake*(ODDS[b.monsterId].odd-1)) : -b.stake;
+      pl.balance += delta;
+      return `<li class="${won?'won':'lost'}"><b>${esc(b.player)}</b> ${won?'gagne':'perd'} <b>${fmt(Math.abs(delta))}</b> 🪙 <span class="hint">(pari sur ${esc(MONSTERS[b.monsterId].name)})</span></li>`;
+    }).join('');
+    html = `<h2>🏆 ${esc(MONSTERS[winnerId].name)} l'emporte !</h2><ul>${lines}</ul>`;
+    savePlayers();
+  }
+  $('results').innerHTML = html;
+  $('results').hidden = false;
+  renderPlayers();
+}
+
+$('addPlayerBtn').addEventListener('click', addPlayer);
+$('newPlayer').addEventListener('keydown', e=>{ if(e.key==='Enter') addPlayer(); });
+$('betBtn').addEventListener('click', placeBet);
+$('playerList').addEventListener('click', e=>{
+  const b = e.target.closest('[data-del]');
+  if(!b || locked) return;
+  const name = b.dataset.del;
+  players = players.filter(p=>p.name!==name);
+  bets = bets.filter(x=>x.player!==name);
+  savePlayers(); renderPlayers(); renderBets();
+});
+$('betsBody').addEventListener('click', e=>{
+  const b = e.target.closest('[data-cancel]');
+  if(!b || locked) return;
+  bets = bets.filter(x=>x.player!==b.dataset.cancel);
+  renderBets();
+});
+let resetArmed = false;
+$('resetBalances').addEventListener('click', ()=>{
+  const btn = $('resetBalances');
+  if(!resetArmed){
+    resetArmed = true; btn.textContent = 'Confirmer ?';
+    setTimeout(()=>{ resetArmed = false; btn.textContent = 'Réinitialiser les soldes'; }, 3000);
+    return;
+  }
+  resetArmed = false; btn.textContent = 'Réinitialiser les soldes';
+  players.forEach(p=>{ p.balance = START_BALANCE; });
+  savePlayers(); renderPlayers();
+});
+fillMonsterSelect();
+
+initState();
 
 /* ================= MODE EN LIGNE (hôte) ================= */
 (function(){
@@ -1063,7 +1217,7 @@ initState();   // premier affichage des monstres
   $o('onLink').textContent = location.href.replace(/[^\/]*([?#].*)?$/, '') + 'parier.html';
   const say = t => { $o('onState').textContent = t; };
 
-  function gameIsFresh(){ return !running && !battleStarted && !settled && fighters.every(f=>f.alive); }
+  function gameIsFresh(){ return !running && fighters.every(f=>f.alive) && !settled; }
   async function sync(){
     try{
       me = await DO.me();
@@ -1107,33 +1261,16 @@ initState();   // premier affichage des monstres
     if(!me) return true;
     try{ round = await DO.activeRound(); }catch(e){ say('Serveur injoignable : ' + e.message); return false; }
     if(!round || round.status !== 'open') return true;
-    try{ await DO.lockRound(round.id); $o('online').open = false; await sync(); return true; }
+    try{ await DO.lockRound(round.id); await sync(); return true; }
     catch(e){ say('Impossible de verrouiller les mises : ' + e.message); return false; }
   };
-  // Résultats affichés sous l'arène (visibles par tes amis si tu partages ton écran)
-  async function showResults(r, winnerId){
-    const box = document.getElementById('results');
-    try{
-      const bets = await DO.bets(r.id), name = id => ((r.monsters || []).find(m => m.id === String(id)) || {}).name || '?';
-      let html;
-      if(winnerId === null) html = '<h2>Match nul</h2><p>Aucun survivant : toutes les mises sont remboursées.</p>';
-      else html = `<h2>🏆 ${esc(name(winnerId))} l'emporte !</h2>` + (bets.length ? '<ul>' + bets.map(b => {
-        const won = b.monster_id === String(winnerId), delta = won ? (b.payout || 0) - b.amount : b.amount;
-        return `<li class="${won ? 'won' : 'lost'}"><b>${esc((b.players || {}).pseudo)}</b> ${won ? 'gagne' : 'perd'} <b>${fmt(Math.abs(delta))}</b> 🪙 <span class="hint">(pari sur ${esc(name(b.monster_id))})</span></li>`;
-      }).join('') + '</ul>' : '<p class="hint">Personne n\'avait parié sur cette manche.</p>');
-      box.innerHTML = html; box.hidden = false;
-    }catch(e){ /* l'affichage des résultats est facultatif */ }
-  }
   // appelé à la fin de la bataille : envoie le gagnant, le serveur verse les gains
   async function sendResult(winnerId){
     pendingWinner = winnerId;
     try{
       round = round || await DO.activeRound();
       if(!round || round.status !== 'locked'){ pendingWinner = undefined; return; }
-      const closing = round;
       await DO.finishRound(round.id, winnerId === null ? null : String(winnerId));
-      $o('online').open = true;
-      showResults(closing, winnerId);
       pendingWinner = undefined; $o('onRetryBtn').hidden = true;
       doneMsg = winnerId === null ? '✅ Match nul : les mises ont été remboursées.' : '✅ Manche clôturée : les gains ont été versés.';
     }catch(e){ say('Résultat non envoyé (' + e.message + '). Réessaie avec le bouton.'); $o('onRetryBtn').hidden = false; }

@@ -98,7 +98,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const fmt = n => Number(n).toLocaleString('fr-FR');
 const ICON = {Dragon:'🐉', Warrior:'⚔️', Spellcaster:'🔮', Fiend:'😈', Beast:'🐺', 'Beast-Warrior':'🦁', Machine:'⚙️', Insect:'🐛', Rock:'🪨', Thunder:'⚡', 'Sea Serpent':'🐍', Zombie:'💀', Fairy:'🧚', Plant:'🌿', Aqua:'🌊', Pyro:'🔥'};
 const DO = window.DuelOnline;
-let me = null, selected = null, busy = false, timer = null, lastKey = '', betMsg = '';
+let me = null, selected = null, busy = false, timer = null, lastKey = '';
 
 function show(id, on){ $(id).hidden = !on; }
 function msg(el, text, ok){ el.textContent = text || ''; el.className = ok ? 'err good' : 'err'; }
@@ -144,7 +144,7 @@ function renderRound(round, closed, bets, prevStake){
         <div class="quick">${[50, 100, 250, 500].map(v => `<button class="ghost" data-q="${v}">${v}</button>`).join('')}<button class="ghost" data-q="all">Tout</button></div>
       </div>
       <div class="row"><button class="primary" id="betBtn" ${cur ? '' : 'disabled'}>${myBet ? 'Modifier mon pari' : 'Parier'}${cur ? ' sur ' + esc(cur.name) : ''}</button>
-        ${myBet ? '<button class="ghost" id="unbetBtn">Retirer mon pari</button>' : ''}<span class="err" id="betErr" role="alert">${esc(betMsg)}</span></div>
+        ${myBet ? '<button class="ghost" id="unbetBtn">Retirer mon pari</button>' : ''}<span class="err" id="betErr" role="alert"></span></div>
       ${myBet ? `<div class="hint">Ton pari : <b>${fmt(myBet.amount)} 🪙</b> sur ${esc((monsters.find(m => m.id === myBet.monster_id) || {}).name || '?')} (x${Number(myBet.odd).toFixed(1)}) — gain si victoire : ${fmt(Math.round(myBet.amount * myBet.odd))} 🪙</div>` : ''}`;
   } else { // locked
     box.innerHTML = `<h2>Bataille en cours — mises closes (manche n°${round.id})</h2>
@@ -180,15 +180,15 @@ async function refresh(force){
 
 $('roundPanel').addEventListener('click', async e => {
   const card = e.target.closest('.card'), q = e.target.closest('[data-q]');
-  if(card){ selected = card.dataset.mid; betMsg = ''; return refresh(true); }
+  if(card){ selected = card.dataset.mid; return refresh(true); }
   if(q){ const v = q.dataset.q === 'all' ? me.balance : Number(q.dataset.q); $('stake').value = v; return; }
   const round = window.__round; if(!round) return;
   if(e.target.id === 'betBtn' || e.target.id === 'unbetBtn'){
-    busy = true; const err = $('betErr'); betMsg = ''; msg(err, '');
+    busy = true; const err = $('betErr'); msg(err, '');
     try{
       if(e.target.id === 'betBtn') await DO.placeBet(round.id, selected, Number($('stake').value));
       else { await DO.cancelBet(round.id); selected = null; }
-    }catch(ex){ busy = false; betMsg = ex.message; return msg(err, ex.message); }
+    }catch(ex){ busy = false; return msg(err, ex.message); }
     busy = false; refresh(true);
   }
 });
