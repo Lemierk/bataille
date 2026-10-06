@@ -258,7 +258,7 @@
 <script src="duel-online.js"></script>
 <div class="wrap">
   <header>
-    <h1>Duel Royale</h1>
+    <h1>Duel Royal</h1>
     <p>Les anciens monstres s'affrontent dans l'arène. Un seul survivra.</p>
   </header>
 
@@ -948,7 +948,7 @@ function step(t){
     const btn = document.getElementById('toggleBtn');
     btn.textContent = 'Lancer le duel'; btn.disabled = true;
     if(alive.length === 1){
-      document.getElementById('status').textContent = alive[0].name + ' remporte le duel royale !';
+      document.getElementById('status').textContent = alive[0].name + ' remporte le duel royal !';
       logLine('🏆 ' + alive[0].name + ' est le dernier debout.', true);
       settled = true;
       if(window.onlineAfterFinish) window.onlineAfterFinish(alive[0].id);
