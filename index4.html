@@ -257,7 +257,6 @@
     box-shadow:0 2px 6px rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; transition:opacity .6s;}
   .tcard.down{border:2px solid #8a6a3a;
     background:radial-gradient(ellipse at 50% 50%, #7a4220 0 26%, transparent 29%), repeating-linear-gradient(45deg,#3b2414 0 3px,#4a2e19 3px 6px);}
-  .tcard.down.img{border:none; background-color:#56301f;}
   .tcard.up{border:2px solid var(--k,#c9a86a); background:linear-gradient(160deg,#2b2d3d,#14151f); animation:cardFlip .45s ease;}
   .tcard.up.magie{--k:#2fb98a;} .tcard.up.piege{--k:#c04f95;}
   .tcard.up.persist{box-shadow:0 0 14px var(--k), 0 2px 6px rgba(0,0,0,.6);}
@@ -689,12 +688,6 @@ const MONSTERS = [
   {name:'Thunder Dragon', atk:1600, def:1500, level:5, attr:'LIGHT', type:'Thunder', img:'dragonton2.png'},
   {name:'Big Koala', atk:2700, def:2000, level:7, attr:'EARTH', type:'Beast', img:'koala2.png'},
   {name:'Neos', atk:2500, def:2000, level:7, attr:'LIGHT', type:'Warrior', img:'neos2.png'},
-  {name:'Hungry Burger', atk:2000, def:1850, level:6, attr:'DARK', type:'Warrior', img:'burger2.png'},
-  {name:'Buster Blader', atk:2600, def:2300, level:7, attr:'EARTH', type:'Warrior', img:'buster2.png'},
-  {name:'Metal Dragon', atk:1850, def:1700, level:6, attr:'WIND', type:'MACHINE', img:'metald2.png'},
-  {name:'Wall Shadow', atk:1600, def:3000, level:7, attr:'DARK', type:'Warrior', img:'shadow2.png'},
-  {name:'Tri-Horned Dragon', atk:2850, def:2350, level:8, attr:'DARK', type:'Dragon', img:'trihorn2.png'},
-  {name:'Twin-Headed Fire Dragon', atk:2200, def:1700, level:6, attr:'FIRE', type:'PYRO', img:'twinhead2.png'},
 ];
 
 const arenaWrap = document.getElementById('arena-wrap');
@@ -735,7 +728,7 @@ function platformBounds(){
 const CELL = 64;                  // taille visée d'une case (px)
 const FOOT_DY = 22;               // les pieds d'un monstre sont ~22 px sous son point (x,y)
 const CARDS_FACE_UP = false;      // false = cartes posées face cachée, révélées au déclenchement ; true = visibles d'emblée
-const CARD_BACK = 'backcard.jpg';             // ex: 'dos.png' = image du dos des cartes ; vide = dos dessiné en CSS
+const CARD_BACK = '';             // ex: 'dos.png' = image du dos des cartes ; vide = dos dessiné en CSS
 const CARD_DEFS = [
   {id:'epees',   kind:'magie', icon:'🗡️', img:'epees.png', name:'Épées de révélation de la lumière', pop:'Bloqué 3 s', copies:3,
    desc:'bloque les monstres autour de la case pendant 3 s', effect:{freeze:3000, radius:1}},
@@ -802,8 +795,8 @@ function cardCell(g, card){ return {c:Math.min(g.cols-1, Math.floor(card.u*g.col
 function paintCard(card, up){
   const d = card.def, el = card.el;
   if(!up){
-    card.up = false; el.className = 'tcard down' + (CARD_BACK ? ' img' : ''); el.innerHTML = '';
-    el.style.backgroundImage = CARD_BACK ? `url('${CARD_BACK}')` : ''; el.style.backgroundSize = CARD_BACK ? '100% 100%' : '';
+    card.up = false; el.className = 'tcard down'; el.innerHTML = '';
+    el.style.backgroundImage = CARD_BACK ? `url('${CARD_BACK}')` : ''; el.style.backgroundSize = CARD_BACK ? 'cover' : '';
     return;
   }
   if(card.up) return;
