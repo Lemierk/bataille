@@ -883,27 +883,8 @@ function renderTerrains(){
 function spawnTerrains(){
   terrEl.innerHTML = ''; terrains = [];
   const g = gridInfo(), s = Math.min(TERRAIN_SIZE, g.cols, g.rows);
-  // les zones ne se superposent jamais. On tente plusieurs placements au hasard et on garde celui qui en fait tenir le plus
-  // (si la grille est trop petite pour TERRAIN_COUNT zones de TERRAIN_SIZE x TERRAIN_SIZE, il y aura simplement moins de terrains)
-  const pool = TERRAIN_DEFS.slice().sort(()=>Math.random()-.5).slice(0, TERRAIN_COUNT);
-  const tryLayout = ()=>{
-    const spots = [];
-    const free = (c, r)=> spots.every(p=> Math.abs(p.c0-c) >= s || Math.abs(p.r0-r) >= s);
-    for(let n = 0; n < pool.length; n++){
-      let spot = null;
-      for(let i = 0; i < 60 && !spot; i++){
-        const c = Math.random()*(g.cols-s+1)|0, r = Math.random()*(g.rows-s+1)|0;
-        if(free(c, r)) spot = {c0:c, r0:r};
-      }
-      if(!spot) break;
-      spots.push(spot);
-    }
-    return spots;
-  };
-  let spots = [];
-  for(let t = 0; t < 60 && spots.length < pool.length; t++){ const l = tryLayout(); if(l.length > spots.length) spots = l; }
-  pool.slice(0, spots.length).forEach((def, idx)=>{
-    const c0 = spots[idx].c0, r0 = spots[idx].r0;
+  TERRAIN_DEFS.slice().sort(()=>Math.random()-.5).slice(0, TERRAIN_COUNT).forEach(def=>{
+    const c0 = Math.random()*(g.cols-s+1)|0, r0 = Math.random()*(g.rows-s+1)|0;
     const el = document.createElement('div');
     el.className = 'terr'; el.style.setProperty('--tc', def.color);
     const im = new Image(); im.alt = ''; smartImg(im, def.img, ()=>im.remove()); el.appendChild(im);
