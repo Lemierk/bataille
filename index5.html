@@ -723,7 +723,6 @@ function platformBounds(){
    effect possibles (combinables) :
      atk:+N / def:+N     modifie définitivement l'ATK / la DEF du monstre qui déclenche
      atkMul:0.5          multiplie l'ATK du monstre (Rétrécissement)
-     hpPct:-0.3          retire 30 % des PV max du monstre (jamais mortel, il reste 1 PV minimum)
      nextAtk:+N          bonus d'ATK pour sa PROCHAINE attaque seulement
      freeze:ms, radius:N bloque les monstres des cases à ≤ radius de la carte pendant ms (temps de jeu)
      destroyCards:1      détruit au hasard une autre magie/piège encore sur le terrain (Typhon)
@@ -740,8 +739,8 @@ const CARD_BACK = 'backcard.jpg';             // ex: 'dos.png' = image du dos de
 const CARD_DEFS = [
   {id:'epees',   kind:'magie', icon:'🗡️', img:'epees.PNG', name:'Épées de révélation de la lumière', pop:'Bloqué 3 s', copies:3,
    desc:'bloque les monstres autour de la case pendant 3 s', effect:{freeze:3000, radius:1}},
-  {id:'fissure', kind:'magie', icon:'🕳️', img:'fissure.PNG', name:'Fissure', pop:'PV −50%', copies:3,
-   desc:'PV −50%', persistent:true, effect:{hpPct:-0.5}},
+  {id:'fissure', kind:'magie', icon:'🕳️', img:'fissure.PNG', name:'Fissure', pop:'ATK/DEF −1000', copies:3,
+   desc:'ATK/DEF −1000', persistent:true, effect:{atk:-1000, def:-1000}},
   {id:'charge',  kind:'magie', icon:'🏇', img:'charge.PNG', name:'Charge intrépide', pop:'ATK +700 (1 attaque)', copies:3,
    desc:'+700 ATK pour sa prochaine attaque', effect:{nextAtk:700}},
   {id:'typhon',  kind:'magie', icon:'🌪️', img:'typhon.PNG', name:'Typhon', pop:'Typhon !', copies:2,
@@ -758,8 +757,8 @@ const CARD_DEFS = [
    desc:"échange l'ATK et la DEF de tous les monstres", effect:{swapStats:true}},
   {id:'retrecis',kind:'magie', icon:'📉', img:'retrecissement.PNG', name:'Rétrécissement', pop:'ATK ÷ 2', copies:2,
    desc:'ATK divisée par 2', effect:{atkMul:0.5}},
-  {id:'trappe',  kind:'piege', icon:'🪤', img:'Trappe.png', name:'Trappe', pop:'PV −30%', copies:3,
-   desc:'PV −30%', persistent:true, effect:{hpPct:-0.3}},
+  {id:'trappe',  kind:'piege', icon:'🪤', img:'Trappe.PNG', name:'Trappe', pop:'ATK/DEF −1000', copies:3,
+   desc:'ATK/DEF −1000', persistent:true, effect:{atk:-1000, def:-1000}},
   {id:'renfort', kind:'piege', icon:'⚔️', img:'renfort.PNG', name:'Renfort', pop:'ATK +500', copies:3,
    desc:'ATK +500', effect:{atk:500}},
   {id:'enceinte',kind:'piege', icon:'🏰', img:'enceinte.PNG', name:'Enceinte du château', pop:'DEF +500', copies:3,
@@ -780,29 +779,6 @@ const TERRAIN_DEFS = [
   {id:'yami',     name:'Yami',     img:'Yami.PNG',     color:'#b0407a', plus:['Fiend','Spellcaster'], minus:['Fairy']},
   {id:'mountain', name:'Mountain', img:'Mountain.PNG', color:'#8a9bb5', plus:['Dragon','Winged Beast','Thunder'], minus:[]},
 ];
-
-/* ---------- chargement tolérant des images de cartes / terrains ----------
-   Sur GitHub/Vercel (Linux) « Trappe.png » et « trappe.png » sont deux fichiers différents.
-   Si l'image n'est pas trouvée sous le nom écrit dans le code, on essaie d'autres casses / extensions,
-   et la console du navigateur (F12) indique le fichier manquant ou le vrai nom à utiliser. */
-function imgCandidates(src){
-  const m = src.match(/^(.*?)(\.[^./]+)$/);
-  if(!m) return [src];
-  const base = m[1], ext = m[2], out = [];
-  [base, base.toLowerCase(), base.charAt(0).toUpperCase() + base.slice(1).toLowerCase()].forEach(b=>
-    [ext, ext.toLowerCase(), ext.toUpperCase(), '.png', '.PNG', '.jpg', '.jpeg', '.webp'].forEach(x=>{ const c = b + x; if(!out.includes(c)) out.push(c); }));
-  return out;
-}
-function smartImg(im, src, onFail){
-  const list = imgCandidates(src); let i = 0;
-  im.onload = ()=>{ if(i > 0) console.info(`[Duel Royale] « ${src} » trouvée sous le nom « ${list[i]} » : renomme le fichier ou corrige le nom dans le code.`); };
-  im.onerror = ()=>{
-    i++;
-    if(i < list.length) im.src = list[i];
-    else { console.warn(`[Duel Royale] image introuvable : « ${src} » (essayé : ${list.join(', ')}). Vérifie qu'elle est bien dans le dépôt, à côté de index.html.`); if(onFail) onFail(); }
-  };
-  im.src = list[0];
-}
 
 const cardsEl = document.getElementById('cards'), terrEl = document.getElementById('terrains');
 let cards = [], terrains = [], zones = [], timers = [], gameClock = 0;   // gameClock = temps de JEU en ms (s'arrête en pause, suit le curseur de vitesse)
@@ -836,7 +812,7 @@ function paintCard(card, up){
   el.style.backgroundImage = ''; el.style.backgroundSize = '';
   const fallback = ()=>{ el.innerHTML = `<span class="ci">${d.icon || '🃏'}</span><span class="cl">${d.name}</span>`; };
   if(d.img){
-    const im = new Image(); im.className = 'cimg'; im.alt = d.name; smartImg(im, d.img, fallback);
+    const im = new Image(); im.className = 'cimg'; im.alt = d.name; im.onerror = fallback; im.src = d.img;
     el.innerHTML = ''; el.appendChild(im);
   } else fallback();
 }
@@ -887,7 +863,7 @@ function spawnTerrains(){
     const c0 = Math.random()*(g.cols-s+1)|0, r0 = Math.random()*(g.rows-s+1)|0;
     const el = document.createElement('div');
     el.className = 'terr'; el.style.setProperty('--tc', def.color);
-    const im = new Image(); im.alt = ''; smartImg(im, def.img, ()=>im.remove()); el.appendChild(im);
+    const im = new Image(); im.alt = ''; im.onerror = ()=>im.remove(); im.src = def.img; el.appendChild(im);
     const tag = document.createElement('span'); tag.className = 'tn'; tag.textContent = def.name; el.appendChild(tag);
     terrEl.appendChild(el);
     terrains.push({def, u0:c0/g.cols, v0:r0/g.rows, revealed:false, el});
@@ -983,7 +959,7 @@ function showcase(d, run){
   showEl.innerHTML = ''; showEl.classList.add('on');
   const box = document.createElement('div'); box.className = 'sc ' + d.kind;
   const fallback = ()=>{ box.innerHTML = `<span class="big">${d.icon || '🃏'}</span><span class="nm">${d.name}</span>`; };
-  if(d.img){ const im = new Image(); im.alt = d.name; smartImg(im, d.img, fallback); box.appendChild(im); } else fallback();
+  if(d.img){ const im = new Image(); im.alt = d.name; im.onerror = fallback; im.src = d.img; box.appendChild(im); } else fallback();
   showEl.appendChild(box);
   clearTimeout(showTimer);
   showTimer = setTimeout(()=>{ box.classList.add('out'); showEl.classList.remove('on'); setTimeout(()=>box.remove(), 550); }, SLOWMO_MS - 350);
@@ -1076,7 +1052,7 @@ function triggerCard(card, f, g, cc, cr){
   card.hit.add(f.id);
   paintCard(card, true);
   logLine(`🃏 ${f.name} déclenche « ${d.name} » : ${d.desc}.`);
-  const bad = e.atk < 0 || e.def < 0 || e.hpPct < 0 || e.atkMul || e.raigeki || e.blackHole || e.meteors || e.destroyCards;
+  const bad = e.atk < 0 || e.def < 0 || e.atkMul || e.raigeki || e.blackHole || e.meteors || e.destroyCards;
   popText(f.x, f.y-58, `${d.icon || '🃏'} ${d.pop}`, (e.freeze || e.swapStats) ? '#ffe28a' : bad ? '#ff7a5c' : '#7fd18b');
 
   if(e.atk || e.def){
@@ -1084,14 +1060,6 @@ function triggerCard(card, f, g, cc, cr){
     f.def = Math.max(0, f.def + (e.def || 0));
   }
   if(e.atkMul) f.atk = Math.round(f.atk * e.atkMul);
-  if(e.hpPct){                              // perte de PV en % des PV max (jamais mortelle : il reste au moins 1 PV)
-    const loss = Math.min(f.hp - 1, Math.round(f.maxHp * -e.hpPct));
-    if(loss > 0){
-      f.hp -= loss;
-      const bar = f.el.querySelector('.hpfill'); if(bar) bar.style.width = (f.hp / f.maxHp * 100).toFixed(0) + '%';
-      logLine(`❤️ ${f.name} perd ${loss} PV (${Math.round(-e.hpPct*100)} % de ses PV max).`);
-    }
-  }
   if(e.nextAtk) f.chargeBonus = (f.chargeBonus || 0) + e.nextAtk;
   refreshStats(f);
 
