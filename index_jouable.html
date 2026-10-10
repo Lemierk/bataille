@@ -331,15 +331,18 @@
     background:linear-gradient(90deg, transparent, rgba(255,226,138,.55) 45%, rgba(158,197,255,.75) 60%, transparent);}
   @keyframes swapwave{from{transform:translateX(-160px);} to{transform:translateX(var(--w,1200px));}}
   @media (prefers-reduced-motion: reduce){ .quake{animation:none;} }
-  .raindrop{position:absolute; width:2px; height:24px; margin:-24px 0 0 -1px; border-radius:2px; pointer-events:none; z-index:6; background:linear-gradient(180deg, transparent, #bfe6ff);}
-  .splash{position:absolute; border:2px solid rgba(190,230,255,.9); border-radius:50%; pointer-events:none; z-index:5; animation:splashA .6s ease-out forwards;}
-  @keyframes splashA{0%{opacity:.9; transform:scale(.3);} 100%{opacity:0; transform:scale(2.2);}}
-  .rainfield{position:absolute; inset:0; pointer-events:none; z-index:5; opacity:0;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='120'%3E%3Cpath d='M14 8l-3 30M52 64l-3 30M78 30l-3 26M30 86l-3 24' stroke='%23bfe6ff' stroke-opacity='.55' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E"),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='200'%3E%3Cpath d='M20 12l-3 38M90 70l-3 40M60 140l-3 36M118 30l-3 30' stroke='%23e3f4ff' stroke-opacity='.4' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
-    animation:rainFade 3.9s linear forwards, rainMove .5s linear infinite;}
-  @keyframes rainFade{0%{opacity:0;} 10%{opacity:1;} 85%{opacity:1;} 100%{opacity:0;}}
-  @keyframes rainMove{from{background-position:0 0, 0 0;} to{background-position:0 120px, 0 200px;}}
+  .controls select{font-family:inherit; font-size:13px; background:var(--panel); color:var(--ink); border:1px solid var(--gold); border-radius:6px; padding:6px 8px; max-width:210px;}
+  .controls select:disabled{opacity:.5;}
+  #pilotHint{text-align:center; margin:6px auto 8px; max-width:900px; min-height:1.2em;}
+  #arena-wrap.pilotmode{touch-action:none; cursor:crosshair; user-select:none; -webkit-user-select:none;}
+  .pilotmark{position:absolute; left:50%; top:42px; width:60px; height:20px; margin-left:-30px; border:2px solid #ffe28a; border-radius:50%;
+    box-shadow:0 0 12px #ffe28a, inset 0 0 8px rgba(255,226,138,.6); z-index:-1; pointer-events:none; animation:pilotPulse 1.3s ease-in-out infinite;}
+  .pilotmark::after{content:'▼'; position:absolute; left:50%; top:-124px; transform:translateX(-50%); font-size:16px; color:#ffe28a; text-shadow:0 0 8px #ffe28a, 0 1px 2px #000; animation:pilotBob 1s ease-in-out infinite;}
+  @keyframes pilotPulse{0%,100%{opacity:.55;} 50%{opacity:1;}}
+  @keyframes pilotBob{0%,100%{margin-top:0;} 50%{margin-top:6px;}}
+  .movetgt{position:absolute; width:30px; height:14px; margin:-7px 0 0 -15px; border:2px solid #ffe28a; border-radius:50%; z-index:4; pointer-events:none;
+    box-shadow:0 0 10px #ffe28a; animation:tgtPulse 1s ease-out infinite;}
+  @keyframes tgtPulse{0%{opacity:1; transform:scale(.6);} 100%{opacity:.2; transform:scale(1.4);}}
   .mods{font-size:8.5px; line-height:1.15; white-space:nowrap; text-align:center; text-shadow:0 1px 2px #000;}
   .mods .up{color:#7fd18b;} .mods .down{color:#ff7a5c;}
 </style>
@@ -380,9 +383,13 @@
     <label>Vitesse
       <input type="range" id="speed" min="30" max="300" value="100">
     </label>
+    <label>Piloter
+      <select id="pilotSel"><option value="">— aucun —</option></select>
+    </label>
   </div>
 
   <div id="status"></div>
+  <div id="pilotHint" class="hint"></div>
 
   <div id="arena-wrap">
     <div id="arena-field"></div>
@@ -732,8 +739,7 @@ function platformBounds(){
    effect possibles (combinables) :
      atk:+N / def:+N     modifie définitivement l'ATK / la DEF du monstre qui déclenche
      atkMul:0.5          multiplie l'ATK du monstre (Rétrécissement)
-     hpPct:-0.3          retire 30 % des PV max du monstre (jamais mortel, il reste 1 PV minimum) ; hpPct:+0.4 = soigne de 40 % des PV max (plafonné aux PV max)
-     rain:{count,radius,hpPct,duration}  pluie de soin (Rain of Mercy) : chaque monstre touché récupère hpPct de ses PV max, 1 fois par pluie
+     hpPct:-0.3          retire 30 % des PV max du monstre (jamais mortel, il reste 1 PV minimum)
      nextAtk:+N          bonus d'ATK pour sa PROCHAINE attaque seulement
      freeze:ms, radius:N bloque les monstres des cases à ≤ radius de la carte pendant ms (temps de jeu)
      destroyCards:1      détruit au hasard une autre magie/piège encore sur le terrain (Typhon)
@@ -766,14 +772,6 @@ const CARD_DEFS = [
    desc:'ressuscite un monstre mort au hasard', effect:{reborn:true}},
   {id:'shield',  kind:'magie', icon:'🛡️', img:'shieldsword.PNG', name:'Shield & Sword', pop:'ATK ⇄ DEF', copies:1, showcase:true,
    desc:"échange l'ATK et la DEF de tous les monstres", effect:{swapStats:true}},
-  {id:'bluemed', kind:'magie', icon:'💙', img:'Medecineb.PNG', name:'Blue Medicine', pop:'PV +40%', copies:3,
-   desc:'PV +40% (jusqu\'aux PV max)', effect:{hpPct:0.4}},
-  {id:'redmed',  kind:'magie', icon:'❤️', img:'MedecineR.PNG', name:'Red Medicine', pop:'PV +50%', copies:2,
-   desc:'PV +50% (jusqu\'aux PV max)', effect:{hpPct:0.5}},
-  {id:'remedy',  kind:'magie', icon:'🧪', img:'Remedy.PNG', name:"Goblin's Secret Remedy", pop:'PV +60%', copies:1,
-   desc:'PV +60% (jusqu\'aux PV max)', effect:{hpPct:0.6}},
-  {id:'rain',    kind:'magie', icon:'🌧️', img:'RainOfMercy.PNG', name:'Rain of Mercy', pop:'Pluie bienfaisante !', copies:1, showcase:true,
-   desc:'pluie sur toute l\'arène : +10% de PV pour chaque monstre touché', effect:{rain:{count:50, radius:50, hpPct:0.1, duration:3000}}},
   {id:'retrecis',kind:'magie', icon:'📉', img:'retrecissement.PNG', name:'Rétrécissement', pop:'ATK ÷ 2', copies:2,
    desc:'ATK divisée par 2', effect:{atkMul:0.5}},
   {id:'trappe',  kind:'piege', icon:'🪤', img:'Trappe.png', name:'Trappe', pop:'PV −30%', copies:3,
@@ -1074,38 +1072,6 @@ function effHinotama(g, m){
   }
   logLine('☄️ Hinotama : une pluie de météorites s\'abat sur l\'arène !');
 }
-// Rain of Mercy : pluie sur toute l'arène ; chaque monstre touché par une goutte récupère hpPct de ses PV max (une seule fois par pluie)
-function effRain(g, m){
-  const healed = new Set(), id = battleId;
-  flashScreen('rgba(130,200,255,.2)', 1500);
-  const field = document.createElement('div'); field.className = 'rainfield'; field.style.animationDuration = (m.duration + 900) + 'ms, .5s';
-  fx.appendChild(field); setTimeout(()=>field.remove(), m.duration + 1000);
-  for(let i = 0; i < m.count; i++){
-    const px = g.x0 + Math.random()*g.pw, py = g.y0 + Math.random()*g.ph, t0 = i * (m.duration / m.count);
-    timers.push({at:gameClock + t0, fn:()=>{
-      const el = document.createElement('div'); el.className = 'raindrop'; el.style.left = px+'px'; el.style.top = py+'px';
-      fx.appendChild(el);
-      if(el.animate) el.animate([{transform:'translate(-16px,-240px)'}, {transform:'translate(0,0)'}], {duration:260, easing:'ease-in', fill:'forwards'});
-      setTimeout(()=>el.remove(), 290);
-    }});
-    timers.push({at:gameClock + t0 + 260, fn:()=>{
-      if(id !== battleId) return;
-      addFx('splash', px-9, py-4, 18, 8, 650);
-      fighters.forEach(o=>{
-        if(!o.alive || healed.has(o.id) || Math.hypot(o.x-px, (o.y+10)-py) > m.radius) return;
-        healed.add(o.id);
-        const gain = Math.min(o.maxHp - o.hp, Math.round(o.maxHp * m.hpPct));
-        if(gain > 0){
-          o.hp += gain;
-          const bar = o.el.querySelector('.hpfill'); if(bar) bar.style.width = (o.hp / o.maxHp * 100).toFixed(0) + '%';
-          popText(o.x, o.y-58, `💧 +${gain} PV`, '#7fd18b');
-          logLine(`🌧️ ${o.name} est touché par la pluie : +${gain} PV.`);
-        } else popText(o.x, o.y-58, '💧 PV au max', '#9fd6ff');
-      });
-    }});
-  }
-  logLine("🌧️ Rain of Mercy : une pluie bienfaisante tombe sur l'arène !");
-}
 function effReborn(cx, cy){
   const pool = fighters.filter(o=>!o.alive && !o.dyingVisual);
   if(!pool.length){ logLine('⚰️ Monster Reborn : aucun monstre au cimetière.'); popText(cx, cy-50, '⚰️ Cimetière vide', '#c9c9d6'); return; }
@@ -1153,22 +1119,12 @@ function triggerCard(card, f, g, cc, cr){
     f.def = Math.max(0, f.def + (e.def || 0));
   }
   if(e.atkMul) f.atk = Math.round(f.atk * e.atkMul);
-  if(e.hpPct){                              // PV en % des PV max : négatif = perte (jamais mortelle, il reste 1 PV), positif = soin (plafonné aux PV max)
-    const bar = f.el.querySelector('.hpfill');
-    if(e.hpPct < 0){
-      const loss = Math.min(f.hp - 1, Math.round(f.maxHp * -e.hpPct));
-      if(loss > 0){
-        f.hp -= loss;
-        if(bar) bar.style.width = (f.hp / f.maxHp * 100).toFixed(0) + '%';
-        logLine(`❤️ ${f.name} perd ${loss} PV (${Math.round(-e.hpPct*100)} % de ses PV max).`);
-      }
-    } else {
-      const gain = Math.min(f.maxHp - f.hp, Math.round(f.maxHp * e.hpPct));
-      if(gain > 0){
-        f.hp += gain;
-        if(bar) bar.style.width = (f.hp / f.maxHp * 100).toFixed(0) + '%';
-        logLine(`💚 ${f.name} récupère ${gain} PV (${Math.round(e.hpPct*100)} % de ses PV max).`);
-      } else logLine(`💚 ${f.name} a déjà tous ses PV.`);
+  if(e.hpPct){                              // perte de PV en % des PV max (jamais mortelle : il reste au moins 1 PV)
+    const loss = Math.min(f.hp - 1, Math.round(f.maxHp * -e.hpPct));
+    if(loss > 0){
+      f.hp -= loss;
+      const bar = f.el.querySelector('.hpfill'); if(bar) bar.style.width = (f.hp / f.maxHp * 100).toFixed(0) + '%';
+      logLine(`❤️ ${f.name} perd ${loss} PV (${Math.round(-e.hpPct*100)} % de ses PV max).`);
     }
   }
   if(e.nextAtk) f.chargeBonus = (f.chargeBonus || 0) + e.nextAtk;
@@ -1192,11 +1148,10 @@ function triggerCard(card, f, g, cc, cr){
     if(e.raigeki) effRaigeki(g, cr);
     if(e.blackHole) effBlackHole(g, cx, cy, e.blackHole.radius);
     if(e.meteors) effHinotama(g, e.meteors);
-    if(e.rain) effRain(g, e.rain);
     if(e.reborn) effReborn(cx, cy);
     if(e.swapStats) effSwap();
   };
-  if(d.showcase && (e.raigeki || e.blackHole || e.meteors || e.rain || e.reborn || e.swapStats)) showcase(d, heavy); else heavy();
+  if(d.showcase && (e.raigeki || e.blackHole || e.meteors || e.reborn || e.swapStats)) showcase(d, heavy); else heavy();
 
   if(!d.persistent){                      // carte à usage unique : elle s'efface après quelques secondes
     card.used = true;
@@ -1477,6 +1432,7 @@ function initState(){
   gameClock = 0; zones = []; timers = []; battleId++; slowUntil = 0; showEl.innerHTML = ''; showEl.classList.remove('on'); arenaWrap.classList.remove('quake');
   spawnTerrains();                    // terrains cachés 5x5
   spawnCards();                       // magies / pièges sur des cases aléatoires
+  resetPilot();                       // marque le monstre piloté, remet à zéro les commandes
 
   running = false;
   cancelAnimationFrame(rafId);
@@ -1572,6 +1528,129 @@ function attack(attacker, defender){
   }, hitDelay);
 }
 
+/* ================= PILOTER UN MONSTRE (mode local) =================
+   On choisit un monstre (liste « Piloter » ou clic sur un monstre avant le début) ; on le dirige ensuite avec
+   les flèches / Z Q S D, ou en cliquant (toucher / glisser le doigt) sur l'arène pour lui donner une destination.
+   Rien d'autre ne change : même vitesse, mêmes portées, mêmes attaques que les monstres gérés par le jeu.
+   Dès qu'un ennemi est à portée et que l'attaque est prête, le monstre piloté attaque tout seul, exactement comme les autres,
+   et l'attaque lancée va toujours jusqu'au bout. Les autres monstres le prennent pour cible comme n'importe quel monstre. */
+const PILOT_ATTACK_LOCK = 450;       // ms de jeu pendant lesquelles un monstre piloté reste en place après avoir lancé une attaque
+const pilotSel = document.getElementById('pilotSel'), pilotHintEl = document.getElementById('pilotHint');
+let pilotId = null, pilotTarget = null, pilotDone = false, tgtEl = null, pilotDrag = false;
+const pilotKeys = new Set();
+const PILOT_KEYS = {ArrowUp:'u', KeyW:'u', ArrowDown:'d', KeyS:'d', ArrowLeft:'l', KeyA:'l', ArrowRight:'r', KeyD:'r'};  // KeyW/A/S/D = Z/Q/S/D sur un clavier AZERTY
+
+MONSTERS.map((m,i)=>({n:m.name, i})).sort((a,b)=>a.n.localeCompare(b.n, 'fr')).forEach(o=>{
+  const op = document.createElement('option'); op.value = o.i; op.textContent = o.n; pilotSel.appendChild(op);
+});
+const pilotFighter = ()=> pilotId == null ? null : (fighters[pilotId] || null);
+
+function updatePilotHint(msg){
+  const f = pilotFighter();
+  pilotHintEl.textContent = msg ||
+    (!f ? "Aucun monstre piloté : tous les monstres sont gérés par le jeu. Choisis-en un dans la liste « Piloter », ou clique sur un monstre avant de lancer le duel."
+        : `Tu pilotes ${f.name} : flèches ou Z/Q/S/D pour le diriger, ou clique / touche l'arène pour lui donner une destination. Il attaque tout seul les ennemis à portée.`);
+}
+function clearPilotTarget(){ pilotTarget = null; if(tgtEl){ tgtEl.remove(); tgtEl = null; } }
+function applyPilot(){
+  fighters.forEach(f=>{ const m = f.el.querySelector('.pilotmark'); if(m) m.remove(); });
+  const f = pilotFighter();
+  if(f){ const m = document.createElement('div'); m.className = 'pilotmark'; f.el.appendChild(m); }
+  arenaWrap.classList.toggle('pilotmode', !!f);
+  updatePilotHint();
+}
+function setPilot(id){
+  pilotId = (id === '' || id == null) ? null : Number(id);
+  pilotSel.value = pilotId == null ? '' : String(pilotId);
+  clearPilotTarget(); pilotKeys.clear(); pilotDone = false;
+  applyPilot();
+}
+function resetPilot(){          // appelé à chaque « Nouvelle bataille » : on garde le monstre choisi
+  pilotKeys.clear(); clearPilotTarget(); pilotDone = false; pilotDrag = false; pilotSel.disabled = false;
+  applyPilot();
+}
+pilotSel.addEventListener('change', ()=>{ if(battleStarted){ pilotSel.value = pilotId == null ? '' : String(pilotId); return; } setPilot(pilotSel.value); pilotSel.blur(); });
+
+// ---- clavier ----
+const typing = t => t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
+window.addEventListener('keydown', e=>{
+  const k = PILOT_KEYS[e.code]; if(!k || pilotId == null || typing(e.target)) return;
+  pilotKeys.add(k); clearPilotTarget();
+  if(running) e.preventDefault();            // évite que la page défile pendant le duel
+});
+window.addEventListener('keyup', e=>{ const k = PILOT_KEYS[e.code]; if(k) pilotKeys.delete(k); });
+window.addEventListener('blur', ()=>pilotKeys.clear());
+
+// ---- souris / doigt ----
+function arenaPoint(e){
+  const r = arenaWrap.getBoundingClientRect();
+  return {x:(e.clientX - r.left) * (r.width ? arenaWrap.clientWidth / r.width : 1), y:(e.clientY - r.top) * (r.height ? arenaWrap.clientHeight / r.height : 1)};
+}
+function setPilotTarget(e){
+  const f = pilotFighter(); if(!f || !f.alive) return;
+  const p = arenaPoint(e), b = platformBounds();
+  pilotTarget = {x:Math.max(b.minX, Math.min(b.maxX, p.x)), y:Math.max(b.minY, Math.min(b.maxY, p.y - FOOT_DY))};   // on clique là où le monstre doit poser les pieds
+  if(!tgtEl){ tgtEl = document.createElement('div'); tgtEl.className = 'movetgt'; arenaWrap.appendChild(tgtEl); }
+  tgtEl.style.left = pilotTarget.x + 'px'; tgtEl.style.top = (pilotTarget.y + FOOT_DY) + 'px';
+}
+arenaWrap.addEventListener('pointerdown', e=>{
+  if(e.button !== undefined && e.button > 0) return;
+  if(!battleStarted){                         // avant le duel : un clic sur un monstre le choisit (re-clic = annuler)
+    const p = arenaPoint(e); let best = null, bd = 45;
+    fighters.forEach(f=>{ const d = Math.hypot(f.x - p.x, (f.y + 10) - p.y); if(d < bd){ bd = d; best = f; } });
+    if(best) setPilot(best.id === pilotId ? null : best.id);
+    return;
+  }
+  if(pilotId == null) return;
+  pilotDrag = true; pilotKeys.clear(); setPilotTarget(e);
+});
+arenaWrap.addEventListener('pointermove', e=>{ if(pilotDrag) setPilotTarget(e); });
+['pointerup', 'pointercancel', 'pointerleave'].forEach(n=>arenaWrap.addEventListener(n, ()=>{ pilotDrag = false; }));
+
+// ---- appelé par la boucle de jeu ----
+function pilotUI(){
+  if(!pilotSel.disabled && battleStarted) pilotSel.disabled = true;     // plus de changement de monstre une fois le duel lancé
+  const f = pilotFighter();
+  if(f && !f.alive && !pilotDone){ pilotDone = true; pilotKeys.clear(); clearPilotTarget(); updatePilotHint(`${f.name} a été éliminé… tu peux suivre la fin du duel.`); }
+}
+function pilotEnd(winner){
+  const f = pilotFighter(); if(!f) return;
+  pilotKeys.clear(); clearPilotTarget();
+  if(winner && winner.id === f.id) updatePilotHint(`🏆 ${f.name} remporte le duel royal : bien joué !`);
+  else if(!f.alive) updatePilotHint(`${f.name} a été éliminé. ${winner ? winner.name + ' remporte le duel.' : 'Match nul.'}`);
+}
+function stepPilot(f, target, bestD, alive, b, dt, sm){
+  f.cooldown -= dt * 1000 * sm;
+  // 1) attaque automatique : ennemi à portée + attaque prête -> exactement la règle des monstres gérés par le jeu
+  if(bestD <= f.range && f.cooldown <= 0){
+    f.facingLeft = target.x < f.x; f.moving = false;
+    attack(f, target);
+    f.cooldown = 700 + Math.random()*400;
+    f.lockUntil = gameClock + PILOT_ATTACK_LOCK;
+    return;
+  }
+  if(gameClock < (f.lockUntil || 0)){ f.moving = false; return; }       // l'attaque lancée va jusqu'au bout
+  // 2) déplacement voulu par le joueur : clavier, sinon destination cliquée
+  let ix = (pilotKeys.has('r') ? 1 : 0) - (pilotKeys.has('l') ? 1 : 0), iy = (pilotKeys.has('d') ? 1 : 0) - (pilotKeys.has('u') ? 1 : 0);
+  if(!ix && !iy && pilotTarget){
+    const dx = pilotTarget.x - f.x, dy = pilotTarget.y - f.y, d = Math.hypot(dx, dy);
+    if(d > 6){ ix = dx / d; iy = dy / d; } else clearPilotTarget();
+  }
+  if(!ix && !iy){ f.moving = false; return; }
+  const il = Math.hypot(ix, iy); ix /= il; iy /= il;
+  let rx = 0, ry = 0;                                                  // même répulsion entre monstres que pour les autres
+  alive.forEach(o=>{
+    if(o.id === f.id) return;
+    const d = Math.hypot(o.x - f.x, o.y - f.y);
+    if(d < RADIUS*2.1 && d > 0.01){ rx += (f.x - o.x)/d/d; ry += (f.y - o.y)/d/d; }
+  });
+  let dx = ix + rx*18, dy = iy + ry*18; const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+  f.moving = true;
+  f.x = Math.max(b.minX, Math.min(b.maxX, f.x + dx * f.speed * sm * dt));
+  f.y = Math.max(b.minY, Math.min(b.maxY, f.y + dy * f.speed * sm * dt));
+  if(Math.abs(ix) > 0.01) f.facingLeft = ix < 0;
+}
+
 function step(t){
   if(!running) return;
   const dt = Math.min(40, t - lastT) / 1000;
@@ -1580,6 +1659,7 @@ function step(t){
   gameClock += dt * 1000 * speedMult;     // temps de jeu : pause = il s'arrête, vitesse x2 = il passe 2x plus vite
   const b = platformBounds();
   const alive = fighters.filter(f=>f.alive);
+  pilotUI();
 
   if(alive.length <= 1){
     running = false;
@@ -1595,6 +1675,7 @@ function step(t){
       settled = true;
       if(window.onlineAfterFinish) window.onlineAfterFinish(null);
     }
+    pilotEnd(alive[0] || null);
     return;
   }
 
@@ -1608,6 +1689,7 @@ function step(t){
       if(d<bestD){bestD=d; target=o;}
     });
     if(!target) return;
+    if(f.id === pilotId){ stepPilot(f, target, bestD, alive, b, dt, speedMult); return; }   // monstre piloté par le joueur
     f.moving = bestD > f.range;
 
     f.cooldown -= dt*1000*speedMult;

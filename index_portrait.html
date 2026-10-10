@@ -62,6 +62,18 @@
     border:1px solid var(--line); box-shadow: inset 0 0 70px rgba(0,0,0,.65);
     overflow:hidden; touch-action:none; background:#0d0e15;
   }
+  /* ---- MODE PORTRAIT : l'arène devient une grille verticale fixe (--lw x --lh), réduite à la largeur de l'écran ---- */
+  #arena-box{position:relative; width:100%;}
+  @media (orientation: portrait){
+    .wrap{padding:8px 8px 40px;}
+    header p{display:none;}
+    .controls{gap:6px; padding:6px 8px; margin:6px 0;}
+    .controls button{padding:8px 12px; font-size:13px;}
+    #arena-box{overflow:hidden; border-radius:14px;}
+    #arena-wrap{width:var(--lw,720px); height:var(--lh,1100px); transform-origin:0 0; transform:scale(var(--s,.5)); touch-action:pan-y;}
+    #log{max-height:110px;}
+  }
+
   /* grass surrounding the platform, à la arène de duel */
   #arena-field{
     position:absolute; inset:0; z-index:0;
@@ -331,15 +343,6 @@
     background:linear-gradient(90deg, transparent, rgba(255,226,138,.55) 45%, rgba(158,197,255,.75) 60%, transparent);}
   @keyframes swapwave{from{transform:translateX(-160px);} to{transform:translateX(var(--w,1200px));}}
   @media (prefers-reduced-motion: reduce){ .quake{animation:none;} }
-  .raindrop{position:absolute; width:2px; height:24px; margin:-24px 0 0 -1px; border-radius:2px; pointer-events:none; z-index:6; background:linear-gradient(180deg, transparent, #bfe6ff);}
-  .splash{position:absolute; border:2px solid rgba(190,230,255,.9); border-radius:50%; pointer-events:none; z-index:5; animation:splashA .6s ease-out forwards;}
-  @keyframes splashA{0%{opacity:.9; transform:scale(.3);} 100%{opacity:0; transform:scale(2.2);}}
-  .rainfield{position:absolute; inset:0; pointer-events:none; z-index:5; opacity:0;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='120'%3E%3Cpath d='M14 8l-3 30M52 64l-3 30M78 30l-3 26M30 86l-3 24' stroke='%23bfe6ff' stroke-opacity='.55' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E"),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='200'%3E%3Cpath d='M20 12l-3 38M90 70l-3 40M60 140l-3 36M118 30l-3 30' stroke='%23e3f4ff' stroke-opacity='.4' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
-    animation:rainFade 3.9s linear forwards, rainMove .5s linear infinite;}
-  @keyframes rainFade{0%{opacity:0;} 10%{opacity:1;} 85%{opacity:1;} 100%{opacity:0;}}
-  @keyframes rainMove{from{background-position:0 0, 0 0;} to{background-position:0 120px, 0 200px;}}
   .mods{font-size:8.5px; line-height:1.15; white-space:nowrap; text-align:center; text-shadow:0 1px 2px #000;}
   .mods .up{color:#7fd18b;} .mods .down{color:#ff7a5c;}
 </style>
@@ -384,6 +387,7 @@
 
   <div id="status"></div>
 
+  <div id="arena-box">
   <div id="arena-wrap">
     <div id="arena-field"></div>
     <div id="arena-platform">
@@ -395,6 +399,7 @@
     <div id="cards"></div>
     <div id="fx"></div>
     <div id="showcase"></div>
+  </div>
   </div>
 
   <div id="results" hidden></div>
@@ -732,8 +737,7 @@ function platformBounds(){
    effect possibles (combinables) :
      atk:+N / def:+N     modifie définitivement l'ATK / la DEF du monstre qui déclenche
      atkMul:0.5          multiplie l'ATK du monstre (Rétrécissement)
-     hpPct:-0.3          retire 30 % des PV max du monstre (jamais mortel, il reste 1 PV minimum) ; hpPct:+0.4 = soigne de 40 % des PV max (plafonné aux PV max)
-     rain:{count,radius,hpPct,duration}  pluie de soin (Rain of Mercy) : chaque monstre touché récupère hpPct de ses PV max, 1 fois par pluie
+     hpPct:-0.3          retire 30 % des PV max du monstre (jamais mortel, il reste 1 PV minimum)
      nextAtk:+N          bonus d'ATK pour sa PROCHAINE attaque seulement
      freeze:ms, radius:N bloque les monstres des cases à ≤ radius de la carte pendant ms (temps de jeu)
      destroyCards:1      détruit au hasard une autre magie/piège encore sur le terrain (Typhon)
@@ -766,14 +770,6 @@ const CARD_DEFS = [
    desc:'ressuscite un monstre mort au hasard', effect:{reborn:true}},
   {id:'shield',  kind:'magie', icon:'🛡️', img:'shieldsword.PNG', name:'Shield & Sword', pop:'ATK ⇄ DEF', copies:1, showcase:true,
    desc:"échange l'ATK et la DEF de tous les monstres", effect:{swapStats:true}},
-  {id:'bluemed', kind:'magie', icon:'💙', img:'Medecineb.PNG', name:'Blue Medicine', pop:'PV +40%', copies:3,
-   desc:'PV +40% (jusqu\'aux PV max)', effect:{hpPct:0.4}},
-  {id:'redmed',  kind:'magie', icon:'❤️', img:'MedecineR.PNG', name:'Red Medicine', pop:'PV +50%', copies:2,
-   desc:'PV +50% (jusqu\'aux PV max)', effect:{hpPct:0.5}},
-  {id:'remedy',  kind:'magie', icon:'🧪', img:'Remedy.PNG', name:"Goblin's Secret Remedy", pop:'PV +60%', copies:1,
-   desc:'PV +60% (jusqu\'aux PV max)', effect:{hpPct:0.6}},
-  {id:'rain',    kind:'magie', icon:'🌧️', img:'RainOfMercy.PNG', name:'Rain of Mercy', pop:'Pluie bienfaisante !', copies:1, showcase:true,
-   desc:'pluie sur toute l\'arène : +10% de PV pour chaque monstre touché', effect:{rain:{count:50, radius:50, hpPct:0.1, duration:3000}}},
   {id:'retrecis',kind:'magie', icon:'📉', img:'retrecissement.PNG', name:'Rétrécissement', pop:'ATK ÷ 2', copies:2,
    desc:'ATK divisée par 2', effect:{atkMul:0.5}},
   {id:'trappe',  kind:'piege', icon:'🪤', img:'Trappe.png', name:'Trappe', pop:'PV −30%', copies:3,
@@ -1074,38 +1070,6 @@ function effHinotama(g, m){
   }
   logLine('☄️ Hinotama : une pluie de météorites s\'abat sur l\'arène !');
 }
-// Rain of Mercy : pluie sur toute l'arène ; chaque monstre touché par une goutte récupère hpPct de ses PV max (une seule fois par pluie)
-function effRain(g, m){
-  const healed = new Set(), id = battleId;
-  flashScreen('rgba(130,200,255,.2)', 1500);
-  const field = document.createElement('div'); field.className = 'rainfield'; field.style.animationDuration = (m.duration + 900) + 'ms, .5s';
-  fx.appendChild(field); setTimeout(()=>field.remove(), m.duration + 1000);
-  for(let i = 0; i < m.count; i++){
-    const px = g.x0 + Math.random()*g.pw, py = g.y0 + Math.random()*g.ph, t0 = i * (m.duration / m.count);
-    timers.push({at:gameClock + t0, fn:()=>{
-      const el = document.createElement('div'); el.className = 'raindrop'; el.style.left = px+'px'; el.style.top = py+'px';
-      fx.appendChild(el);
-      if(el.animate) el.animate([{transform:'translate(-16px,-240px)'}, {transform:'translate(0,0)'}], {duration:260, easing:'ease-in', fill:'forwards'});
-      setTimeout(()=>el.remove(), 290);
-    }});
-    timers.push({at:gameClock + t0 + 260, fn:()=>{
-      if(id !== battleId) return;
-      addFx('splash', px-9, py-4, 18, 8, 650);
-      fighters.forEach(o=>{
-        if(!o.alive || healed.has(o.id) || Math.hypot(o.x-px, (o.y+10)-py) > m.radius) return;
-        healed.add(o.id);
-        const gain = Math.min(o.maxHp - o.hp, Math.round(o.maxHp * m.hpPct));
-        if(gain > 0){
-          o.hp += gain;
-          const bar = o.el.querySelector('.hpfill'); if(bar) bar.style.width = (o.hp / o.maxHp * 100).toFixed(0) + '%';
-          popText(o.x, o.y-58, `💧 +${gain} PV`, '#7fd18b');
-          logLine(`🌧️ ${o.name} est touché par la pluie : +${gain} PV.`);
-        } else popText(o.x, o.y-58, '💧 PV au max', '#9fd6ff');
-      });
-    }});
-  }
-  logLine("🌧️ Rain of Mercy : une pluie bienfaisante tombe sur l'arène !");
-}
 function effReborn(cx, cy){
   const pool = fighters.filter(o=>!o.alive && !o.dyingVisual);
   if(!pool.length){ logLine('⚰️ Monster Reborn : aucun monstre au cimetière.'); popText(cx, cy-50, '⚰️ Cimetière vide', '#c9c9d6'); return; }
@@ -1153,22 +1117,12 @@ function triggerCard(card, f, g, cc, cr){
     f.def = Math.max(0, f.def + (e.def || 0));
   }
   if(e.atkMul) f.atk = Math.round(f.atk * e.atkMul);
-  if(e.hpPct){                              // PV en % des PV max : négatif = perte (jamais mortelle, il reste 1 PV), positif = soin (plafonné aux PV max)
-    const bar = f.el.querySelector('.hpfill');
-    if(e.hpPct < 0){
-      const loss = Math.min(f.hp - 1, Math.round(f.maxHp * -e.hpPct));
-      if(loss > 0){
-        f.hp -= loss;
-        if(bar) bar.style.width = (f.hp / f.maxHp * 100).toFixed(0) + '%';
-        logLine(`❤️ ${f.name} perd ${loss} PV (${Math.round(-e.hpPct*100)} % de ses PV max).`);
-      }
-    } else {
-      const gain = Math.min(f.maxHp - f.hp, Math.round(f.maxHp * e.hpPct));
-      if(gain > 0){
-        f.hp += gain;
-        if(bar) bar.style.width = (f.hp / f.maxHp * 100).toFixed(0) + '%';
-        logLine(`💚 ${f.name} récupère ${gain} PV (${Math.round(e.hpPct*100)} % de ses PV max).`);
-      } else logLine(`💚 ${f.name} a déjà tous ses PV.`);
+  if(e.hpPct){                              // perte de PV en % des PV max (jamais mortelle : il reste au moins 1 PV)
+    const loss = Math.min(f.hp - 1, Math.round(f.maxHp * -e.hpPct));
+    if(loss > 0){
+      f.hp -= loss;
+      const bar = f.el.querySelector('.hpfill'); if(bar) bar.style.width = (f.hp / f.maxHp * 100).toFixed(0) + '%';
+      logLine(`❤️ ${f.name} perd ${loss} PV (${Math.round(-e.hpPct*100)} % de ses PV max).`);
     }
   }
   if(e.nextAtk) f.chargeBonus = (f.chargeBonus || 0) + e.nextAtk;
@@ -1192,11 +1146,10 @@ function triggerCard(card, f, g, cc, cr){
     if(e.raigeki) effRaigeki(g, cr);
     if(e.blackHole) effBlackHole(g, cx, cy, e.blackHole.radius);
     if(e.meteors) effHinotama(g, e.meteors);
-    if(e.rain) effRain(g, e.rain);
     if(e.reborn) effReborn(cx, cy);
     if(e.swapStats) effSwap();
   };
-  if(d.showcase && (e.raigeki || e.blackHole || e.meteors || e.rain || e.reborn || e.swapStats)) showcase(d, heavy); else heavy();
+  if(d.showcase && (e.raigeki || e.blackHole || e.meteors || e.reborn || e.swapStats)) showcase(d, heavy); else heavy();
 
   if(!d.persistent){                      // carte à usage unique : elle s'efface après quelques secondes
     card.used = true;
@@ -1455,7 +1408,7 @@ function initState(){
   const b = platformBounds();
   fx.innerHTML = '';
   const pts = placeFighters(MONSTERS.length, b);
-  const arenaScale = Math.max(0.8, Math.min(1.6, arenaWrap.clientWidth / 1000));   // arène plus grande -> monstres un peu plus rapides
+  const arenaScale = portraitMQ.matches ? 1.1 : Math.max(0.8, Math.min(1.6, arenaWrap.clientWidth / 1000));   // arène plus grande -> monstres un peu plus rapides
   fighters = MONSTERS.map((m,i)=>{
     const el = document.createElement('div');
     el.className = 'token';
@@ -1691,6 +1644,26 @@ function computeOdds(){
   });
 }
 const ODDS = computeOdds();
+
+/* ================= MODE PORTRAIT ================= */
+const PORTRAIT_W = 720, PORTRAIT_H = 1100;   // taille logique de l'arène en portrait (plus grand = monstres plus petits à l'écran)
+const portraitMQ = window.matchMedia('(orientation: portrait)');
+function fitArena(){
+  const box = document.getElementById('arena-box');
+  if(portraitMQ.matches){
+    const s = box.clientWidth / PORTRAIT_W;
+    document.documentElement.style.setProperty('--lw', PORTRAIT_W+'px');
+    document.documentElement.style.setProperty('--lh', PORTRAIT_H+'px');
+    arenaWrap.style.setProperty('--s', s);
+    box.style.height = Math.round(PORTRAIT_H * s) + 'px';
+  } else {
+    box.style.height = '';
+    arenaWrap.style.removeProperty('--s');
+  }
+}
+fitArena();
+window.addEventListener('resize', fitArena);
+window.addEventListener('orientationchange', ()=>setTimeout(()=>{ fitArena(); window.dispatchEvent(new Event('resize')); }, 120));
 
 initState();   // premier affichage des monstres
 
