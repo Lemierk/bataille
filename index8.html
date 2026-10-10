@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" class="gated">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -331,22 +331,6 @@
     background:linear-gradient(90deg, transparent, rgba(255,226,138,.55) 45%, rgba(158,197,255,.75) 60%, transparent);}
   @keyframes swapwave{from{transform:translateX(-160px);} to{transform:translateX(var(--w,1200px));}}
   @media (prefers-reduced-motion: reduce){ .quake{animation:none;} }
-  .controls select{font-family:inherit; font-size:13px; background:var(--panel); color:var(--ink); border:1px solid var(--gold); border-radius:6px; padding:6px 8px; max-width:210px;}
-  .controls select:disabled{opacity:.5;}
-  #pilotHint{text-align:center; margin:6px auto 8px; max-width:900px; min-height:1.2em;}
-  #arena-wrap.pilotmode{touch-action:none; cursor:crosshair; user-select:none; -webkit-user-select:none;}
-  .pilotmark{position:absolute; left:50%; top:42px; width:60px; height:20px; margin-left:-30px; border:2px solid #ffe28a; border-radius:50%;
-    box-shadow:0 0 12px #ffe28a, inset 0 0 8px rgba(255,226,138,.6); z-index:-1; pointer-events:none; animation:pilotPulse 1.3s ease-in-out infinite;}
-  .pilotmark::after{content:'▼'; position:absolute; left:50%; top:-124px; transform:translateX(-50%); font-size:16px; color:#ffe28a; text-shadow:0 0 8px #ffe28a, 0 1px 2px #000; animation:pilotBob 1s ease-in-out infinite;}
-  .pilotmark.remote{border-color:#7fd8ff; box-shadow:0 0 12px #7fd8ff, inset 0 0 8px rgba(127,216,255,.6);}
-  .pilotmark.remote::after{color:#7fd8ff; text-shadow:0 0 8px #7fd8ff, 0 1px 2px #000;}
-  .pilotmark.remote::before{content:attr(data-name); position:absolute; left:50%; top:-148px; transform:translateX(-50%); white-space:nowrap; font-size:11px; color:#fff;
-    background:rgba(20,40,60,.8); border:1px solid #7fd8ff; border-radius:8px; padding:0 6px;}
-  @keyframes pilotPulse{0%,100%{opacity:.55;} 50%{opacity:1;}}
-  @keyframes pilotBob{0%,100%{margin-top:0;} 50%{margin-top:6px;}}
-  .movetgt{position:absolute; width:30px; height:14px; margin:-7px 0 0 -15px; border:2px solid #ffe28a; border-radius:50%; z-index:4; pointer-events:none;
-    box-shadow:0 0 10px #ffe28a; animation:tgtPulse 1s ease-out infinite;}
-  @keyframes tgtPulse{0%{opacity:1; transform:scale(.6);} 100%{opacity:.2; transform:scale(1.4);}}
   .raindrop{position:absolute; width:2px; height:24px; margin:-24px 0 0 -1px; border-radius:2px; pointer-events:none; z-index:6; background:linear-gradient(180deg, transparent, #bfe6ff);}
   .splash{position:absolute; border:2px solid rgba(190,230,255,.9); border-radius:50%; pointer-events:none; z-index:5; animation:splashA .6s ease-out forwards;}
   @keyframes splashA{0%{opacity:.9; transform:scale(.3);} 100%{opacity:0; transform:scale(2.2);}}
@@ -356,7 +340,6 @@
     animation:rainFade 3.9s linear forwards, rainMove .5s linear infinite;}
   @keyframes rainFade{0%{opacity:0;} 10%{opacity:1;} 85%{opacity:1;} 100%{opacity:0;}}
   @keyframes rainMove{from{background-position:0 0, 0 0;} to{background-position:0 120px, 0 200px;}}
-  html.gated body{visibility:hidden;}      /* page masquée tant que la connexion hôte n'est pas vérifiée */
   .mods{font-size:8.5px; line-height:1.15; white-space:nowrap; text-align:center; text-shadow:0 1px 2px #000;}
   .mods .up{color:#7fd18b;} .mods .down{color:#ff7a5c;}
 </style>
@@ -365,25 +348,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="duel-online.js"></script>
-<script>
-/* ================= VERROU HÔTE =================
-   Cette page ne s'ouvre qu'avec un compte hôte (is_host) connecté via connexion.html ; sinon on est renvoyé vers la connexion.
-   Attention : c'est un verrou d'AFFICHAGE (le fichier reste téléchargeable tel quel par une personne qui connaît son adresse).
-   La vraie protection des actions de l'hôte (ouvrir / clore une manche...) est assurée par les règles du serveur Supabase. */
-(function(){
-  const root = document.documentElement, DO = window.DuelOnline;
-  if(!DO){ root.classList.remove('gated'); return; }            // Supabase non configuré (mode local) : pas de verrou
-  const file = () => { const f = location.pathname.split('/').pop(); return /^[A-Za-z0-9_-]+\.html$/.test(f) ? f : 'index.html'; };
-  const goLogin = () => location.replace('connexion.html?next=' + encodeURIComponent(file()));
-  window.hostGateRedirect = goLogin;
-  const isHost = async () => { try{ const me = await DO.me(); return !!(me && me.is_host); }catch(e){ return false; } };
-  (async () => {
-    let ok = await isHost();
-    if(!ok){ await new Promise(r => setTimeout(r, 1200)); ok = await isHost(); }   // 2e essai : évite une fausse alerte sur un raté réseau
-    if(ok) root.classList.remove('gated'); else goLogin();
-  })();
-})();
-</script>
 <div class="wrap">
   <header>
     <h1>Duel Royal</h1>
@@ -408,11 +372,6 @@
       <div id="onState" class="hint" role="status"></div>
       <div class="hint">Lien à donner à tes amis : <b id="onLink"></b></div>
     </div>
-    <div id="liveBox" style="margin-top:10px; padding-top:8px; border-top:1px dashed var(--line);">
-      <div class="row"><b>Pilotage en ligne</b> <button id="liveBtn">Ouvrir le salon de pilotage</button></div>
-      <div id="liveState" class="hint" role="status"></div>
-      <div class="hint">Page des joueurs : <b id="liveLink"></b></div>
-    </div>
   </details>
 
   <div class="controls">
@@ -421,13 +380,9 @@
     <label>Vitesse
       <input type="range" id="speed" min="30" max="300" value="100">
     </label>
-    <label>Piloter
-      <select id="pilotSel"><option value="">— aucun —</option></select>
-    </label>
   </div>
 
   <div id="status"></div>
-  <div id="pilotHint" class="hint"></div>
 
   <div id="arena-wrap">
     <div id="arena-field"></div>
@@ -1061,7 +1016,6 @@ let slowUntil = 0, battleId = 0, showTimer = null;
 const showEl = document.getElementById('showcase');
 const speedFactor = ()=> performance.now() < slowUntil ? SLOWMO_FACTOR : 1;
 function showcase(d, run){
-  if(window.liveShow) window.liveShow(d);
   slowUntil = Math.max(slowUntil, performance.now() + SLOWMO_MS);
   showEl.innerHTML = ''; showEl.classList.add('on');
   const box = document.createElement('div'); box.className = 'sc ' + d.kind;
@@ -1523,8 +1477,6 @@ function initState(){
   gameClock = 0; zones = []; timers = []; battleId++; slowUntil = 0; showEl.innerHTML = ''; showEl.classList.remove('on'); arenaWrap.classList.remove('quake');
   spawnTerrains();                    // terrains cachés 5x5
   spawnCards();                       // magies / pièges sur des cases aléatoires
-  resetPilot();                       // marque le monstre piloté, remet à zéro les commandes
-  if(window.liveReset) window.liveReset();   // salon en ligne : renvoie l'arène aux joueurs
 
   running = false;
   cancelAnimationFrame(rafId);
@@ -1549,7 +1501,6 @@ function logLine(text, isWin){
   const div = document.createElement('div');
   if(isWin) div.className = 'win';
   div.textContent = text;
-  if(window.liveLog) window.liveLog(text, isWin);
   log.prepend(div);
 }
 
@@ -1621,146 +1572,6 @@ function attack(attacker, defender){
   }, hitDelay);
 }
 
-/* ================= PILOTER UN MONSTRE (mode local) =================
-   On choisit un monstre (liste « Piloter » ou clic sur un monstre avant le début) ; on le dirige ensuite avec
-   les flèches / Z Q S D, ou en cliquant (toucher / glisser le doigt) sur l'arène pour lui donner une destination.
-   Rien d'autre ne change : même vitesse, mêmes portées, mêmes attaques que les monstres gérés par le jeu.
-   Dès qu'un ennemi est à portée et que l'attaque est prête, le monstre piloté attaque tout seul, exactement comme les autres,
-   et l'attaque lancée va toujours jusqu'au bout. Les autres monstres le prennent pour cible comme n'importe quel monstre. */
-const PILOT_ATTACK_LOCK = 450;       // ms de jeu pendant lesquelles un monstre piloté reste en place après avoir lancé une attaque
-const pilotSel = document.getElementById('pilotSel'), pilotHintEl = document.getElementById('pilotHint');
-let pilotId = null, pilotTarget = null, pilotDone = false, tgtEl = null, pilotDrag = false;
-const pilotKeys = new Set();
-const remotePilots = new Map();      // n° de monstre -> {pid, pseudo, dx, dy, target, upd, seen} : monstres pilotés par des joueurs en ligne
-const isPiloted = f => f.id === pilotId || remotePilots.has(f.id);
-const PILOT_KEYS = {ArrowUp:'u', KeyW:'u', ArrowDown:'d', KeyS:'d', ArrowLeft:'l', KeyA:'l', ArrowRight:'r', KeyD:'r'};  // KeyW/A/S/D = Z/Q/S/D sur un clavier AZERTY
-
-MONSTERS.map((m,i)=>({n:m.name, i})).sort((a,b)=>a.n.localeCompare(b.n, 'fr')).forEach(o=>{
-  const op = document.createElement('option'); op.value = o.i; op.textContent = o.n; pilotSel.appendChild(op);
-});
-const pilotFighter = ()=> pilotId == null ? null : (fighters[pilotId] || null);
-
-function updatePilotHint(msg){
-  const f = pilotFighter();
-  pilotHintEl.textContent = msg ||
-    (!f ? "Aucun monstre piloté : tous les monstres sont gérés par le jeu. Choisis-en un dans la liste « Piloter », ou clique sur un monstre avant de lancer le duel."
-        : `Tu pilotes ${f.name} : flèches ou Z/Q/S/D pour le diriger, ou clique / touche l'arène pour lui donner une destination. Il attaque tout seul les ennemis à portée.`);
-}
-function clearPilotTarget(){ pilotTarget = null; if(tgtEl){ tgtEl.remove(); tgtEl = null; } }
-function applyPilot(){
-  fighters.forEach(f=>{ const m = f.el.querySelector('.pilotmark'); if(m) m.remove(); });
-  const f = pilotFighter();
-  if(f){ const m = document.createElement('div'); m.className = 'pilotmark'; f.el.appendChild(m); }
-  remotePilots.forEach((c, id)=>{ const rf = fighters[id]; if(!rf) return; const m = document.createElement('div'); m.className = 'pilotmark remote'; m.dataset.name = c.pseudo; rf.el.appendChild(m); });
-  arenaWrap.classList.toggle('pilotmode', !!f);
-  updatePilotHint();
-}
-function setPilot(id){
-  if(id !== '' && id != null && remotePilots.has(Number(id))){
-    pilotSel.value = pilotId == null ? '' : String(pilotId);
-    return updatePilotHint(`${fighters[Number(id)].name} est déjà piloté par ${remotePilots.get(Number(id)).pseudo}.`);
-  }
-  pilotId = (id === '' || id == null) ? null : Number(id);
-  pilotSel.value = pilotId == null ? '' : String(pilotId);
-  clearPilotTarget(); pilotKeys.clear(); pilotDone = false;
-  applyPilot();
-}
-function resetPilot(){          // appelé à chaque « Nouvelle bataille » : on garde le monstre choisi
-  pilotKeys.clear(); clearPilotTarget(); pilotDone = false; pilotDrag = false; pilotSel.disabled = false;
-  applyPilot();
-}
-pilotSel.addEventListener('change', ()=>{ if(battleStarted){ pilotSel.value = pilotId == null ? '' : String(pilotId); return; } setPilot(pilotSel.value); pilotSel.blur(); });
-
-// ---- clavier ----
-const typing = t => t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
-window.addEventListener('keydown', e=>{
-  const k = PILOT_KEYS[e.code]; if(!k || pilotId == null || typing(e.target)) return;
-  pilotKeys.add(k); clearPilotTarget();
-  if(running) e.preventDefault();            // évite que la page défile pendant le duel
-});
-window.addEventListener('keyup', e=>{ const k = PILOT_KEYS[e.code]; if(k) pilotKeys.delete(k); });
-window.addEventListener('blur', ()=>pilotKeys.clear());
-
-// ---- souris / doigt ----
-function arenaPoint(e){
-  const r = arenaWrap.getBoundingClientRect();
-  return {x:(e.clientX - r.left) * (r.width ? arenaWrap.clientWidth / r.width : 1), y:(e.clientY - r.top) * (r.height ? arenaWrap.clientHeight / r.height : 1)};
-}
-function setPilotTarget(e){
-  const f = pilotFighter(); if(!f || !f.alive) return;
-  const p = arenaPoint(e), b = platformBounds();
-  pilotTarget = {x:Math.max(b.minX, Math.min(b.maxX, p.x)), y:Math.max(b.minY, Math.min(b.maxY, p.y - FOOT_DY))};   // on clique là où le monstre doit poser les pieds
-  if(!tgtEl){ tgtEl = document.createElement('div'); tgtEl.className = 'movetgt'; arenaWrap.appendChild(tgtEl); }
-  tgtEl.style.left = pilotTarget.x + 'px'; tgtEl.style.top = (pilotTarget.y + FOOT_DY) + 'px';
-}
-arenaWrap.addEventListener('pointerdown', e=>{
-  if(e.button !== undefined && e.button > 0) return;
-  if(!battleStarted){                         // avant le duel : un clic sur un monstre le choisit (re-clic = annuler)
-    const p = arenaPoint(e); let best = null, bd = 45;
-    fighters.forEach(f=>{ const d = Math.hypot(f.x - p.x, (f.y + 10) - p.y); if(d < bd){ bd = d; best = f; } });
-    if(best) setPilot(best.id === pilotId ? null : best.id);
-    return;
-  }
-  if(pilotId == null) return;
-  pilotDrag = true; pilotKeys.clear(); setPilotTarget(e);
-});
-arenaWrap.addEventListener('pointermove', e=>{ if(pilotDrag) setPilotTarget(e); });
-['pointerup', 'pointercancel', 'pointerleave'].forEach(n=>arenaWrap.addEventListener(n, ()=>{ pilotDrag = false; }));
-
-// ---- appelé par la boucle de jeu ----
-function pilotUI(){
-  if(!pilotSel.disabled && battleStarted) pilotSel.disabled = true;     // plus de changement de monstre une fois le duel lancé
-  const f = pilotFighter();
-  if(f && !f.alive && !pilotDone){ pilotDone = true; pilotKeys.clear(); clearPilotTarget(); updatePilotHint(`${f.name} a été éliminé… tu peux suivre la fin du duel.`); }
-}
-function pilotEnd(winner){
-  const f = pilotFighter(); if(!f) return;
-  pilotKeys.clear(); clearPilotTarget();
-  if(winner && winner.id === f.id) updatePilotHint(`🏆 ${f.name} remporte le duel royal : bien joué !`);
-  else if(!f.alive) updatePilotHint(`${f.name} a été éliminé. ${winner ? winner.name + ' remporte le duel.' : 'Match nul.'}`);
-}
-function stepPilot(f, target, bestD, alive, b, dt, sm){
-  f.cooldown -= dt * 1000 * sm;
-  // 1) attaque automatique : ennemi à portée + attaque prête -> exactement la règle des monstres gérés par le jeu
-  if(bestD <= f.range && f.cooldown <= 0){
-    f.facingLeft = target.x < f.x; f.moving = false;
-    attack(f, target);
-    f.cooldown = 700 + Math.random()*400;
-    f.lockUntil = gameClock + PILOT_ATTACK_LOCK;
-    return;
-  }
-  if(gameClock < (f.lockUntil || 0)){ f.moving = false; return; }       // l'attaque lancée va jusqu'au bout
-  // 2) déplacement voulu par le joueur : clavier, sinon destination cliquée
-  let ix = 0, iy = 0;
-  const rc = remotePilots.get(f.id);
-  if(rc){                                                              // joueur en ligne : direction (renvoyée toutes les 0,3 s par sa page) ou destination
-    if((rc.dx || rc.dy) && performance.now() - rc.upd < 1500){ ix = rc.dx; iy = rc.dy; }
-    else if(rc.target){
-      const dx = rc.target.x - f.x, dy = rc.target.y - f.y, d = Math.hypot(dx, dy);
-      if(d > 6){ ix = dx / d; iy = dy / d; } else rc.target = null;
-    }
-  } else {                                                             // hôte : clavier, sinon destination cliquée
-    ix = (pilotKeys.has('r') ? 1 : 0) - (pilotKeys.has('l') ? 1 : 0); iy = (pilotKeys.has('d') ? 1 : 0) - (pilotKeys.has('u') ? 1 : 0);
-    if(!ix && !iy && pilotTarget){
-      const dx = pilotTarget.x - f.x, dy = pilotTarget.y - f.y, d = Math.hypot(dx, dy);
-      if(d > 6){ ix = dx / d; iy = dy / d; } else clearPilotTarget();
-    }
-  }
-  if(!ix && !iy){ f.moving = false; return; }
-  const il = Math.hypot(ix, iy); ix /= il; iy /= il;
-  let rx = 0, ry = 0;                                                  // même répulsion entre monstres que pour les autres
-  alive.forEach(o=>{
-    if(o.id === f.id) return;
-    const d = Math.hypot(o.x - f.x, o.y - f.y);
-    if(d < RADIUS*2.1 && d > 0.01){ rx += (f.x - o.x)/d/d; ry += (f.y - o.y)/d/d; }
-  });
-  let dx = ix + rx*18, dy = iy + ry*18; const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
-  f.moving = true;
-  f.x = Math.max(b.minX, Math.min(b.maxX, f.x + dx * f.speed * sm * dt));
-  f.y = Math.max(b.minY, Math.min(b.maxY, f.y + dy * f.speed * sm * dt));
-  if(Math.abs(ix) > 0.01) f.facingLeft = ix < 0;
-}
-
 function step(t){
   if(!running) return;
   const dt = Math.min(40, t - lastT) / 1000;
@@ -1769,7 +1580,6 @@ function step(t){
   gameClock += dt * 1000 * speedMult;     // temps de jeu : pause = il s'arrête, vitesse x2 = il passe 2x plus vite
   const b = platformBounds();
   const alive = fighters.filter(f=>f.alive);
-  pilotUI();
 
   if(alive.length <= 1){
     running = false;
@@ -1785,7 +1595,6 @@ function step(t){
       settled = true;
       if(window.onlineAfterFinish) window.onlineAfterFinish(null);
     }
-    pilotEnd(alive[0] || null);
     return;
   }
 
@@ -1799,7 +1608,6 @@ function step(t){
       if(d<bestD){bestD=d; target=o;}
     });
     if(!target) return;
-    if(isPiloted(f)){ stepPilot(f, target, bestD, alive, b, dt, speedMult); return; }   // monstre piloté par le joueur
     f.moving = bestD > f.range;
 
     f.cooldown -= dt*1000*speedMult;
@@ -1920,7 +1728,7 @@ initState();   // premier affichage des monstres
     try{ await DO.signIn($o('onPseudo').value, $o('onCode').value); $o('onCode').value = ''; await sync(); }
     catch(e){ say(e.message); $o('onLoginHint').textContent = e.message; }
   });
-  $o('onLogoutBtn').addEventListener('click', async ()=>{ await DO.signOut(); if(window.hostGateRedirect) return window.hostGateRedirect(); await sync(); });
+  $o('onLogoutBtn').addEventListener('click', async ()=>{ await DO.signOut(); await sync(); });
 
   $o('onOpenBtn').addEventListener('click', async ()=>{
     if(!gameIsFresh()) return say("Clique d'abord sur « Nouvelle bataille » : les mises s'ouvrent avant le début du duel.");
@@ -1975,129 +1783,6 @@ initState();   // premier affichage des monstres
   window.onlineAfterFinish = winnerId => { if(me) sendResult(winnerId); };
   $o('onRetryBtn').addEventListener('click', ()=>{ if(pendingWinner !== undefined) sendResult(pendingWinner); });
   sync();
-})();
-
-/* ================= SALON DE PILOTAGE EN LIGNE (hôte) =================
-   L'hôte (ce navigateur) fait tourner toute la partie. Il envoie ~8 fois/s un instantané de l'arène aux joueurs
-   (positions, PV, cartes/terrains révélés) et reçoit leurs ordres (choix du monstre, direction, destination).
-   Canal Supabase Realtime « Broadcast » : rien n'est stocké en base. Les joueurs se connectent sur jouer.html. */
-(function(){
-  const DO = window.DuelOnline;
-  if(!DO || !DO.live) return;
-  const ROOM = 'duel-royal-live', SNAP_MS = 120;
-  const $o = id => document.getElementById(id);
-  let ch = null, seq = 0, initId = 0, snapTimer = null, houseTimer = null, resizeT = null;
-  const players = new Map();                                   // pid -> {pseudo, seen}
-  $o('liveLink').textContent = location.href.replace(/[^\/]*([?#].*)?$/, '') + 'jouer.html';
-  const say = t => { $o('liveState').textContent = t; };
-  const send = (event, payload)=>{ if(ch){ try{ Promise.resolve(ch.send({type:'broadcast', event, payload})).catch(()=>{}); }catch(e){} } };
-  const ctrlOf = pid => { for(const c of remotePilots.values()) if(c.pid === pid) return c; return null; };
-  const num = (v, lo, hi) => { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 0; };
-
-  function showState(){
-    if(!ch) return say('Salon fermé. Tes amis qui veulent piloter un monstre se connectent sur la page jouer.html (lien ci-dessus).');
-    const list = [...players.values()].map(p=>{ let m = null; remotePilots.forEach((c, id)=>{ if(c.pseudo === p.pseudo) m = fighters[id].name; }); return p.pseudo + ' (' + (m || 'spectateur') + ')'; });
-    say(`Salon ouvert · ${players.size} joueur(s)` + (list.length ? ' : ' + list.join(', ') : ' — en attente de tes amis…') + (battleStarted ? '' : ' · les choix de monstres se font avant « Lancer le duel ».'));
-  }
-  function buildInit(){
-    const g = gridInfo();
-    return {id:++initId, w:arenaWrap.clientWidth, h:arenaWrap.clientHeight, inset:PLATFORM_INSET,
-      roster: MONSTERS.map((m, i)=>({id:i, name:m.name, type:m.type, img:m.img || null, hp:fighters[i] ? fighters[i].maxHp : m.atk + m.def, atk:m.atk, def:m.def})),
-      cards: cards.map(c=>{ const k = cardCell(g, c); return [Math.round(g.x0 + (k.c+.5)*g.cw), Math.round(g.y0 + (k.r+.5)*g.ch)]; }),
-      defs: CARD_DEFS.map(d=>({name:d.name, img:d.img || null, icon:d.icon || '🃏', kind:d.kind})),
-      terr: TERRAIN_DEFS.map(t=>({name:t.name, img:t.img, color:t.color})),
-      back: CARD_BACK || null};
-  }
-  const sendInit = ()=>{ if(ch) send('init', buildInit()); };
-  function buildSnap(){
-    const g = gridInfo(), now = performance.now();
-    const phase = settled ? 3 : !battleStarted ? 0 : running ? 1 : 2;
-    const win = settled ? fighters.find(f=>f.alive) : null;
-    const pl = [...remotePilots].map(([id, c])=>[id, c.pseudo]); if(pilotId != null) pl.push([pilotId, 'Hôte']);
-    return {s:++seq, i:initId, p:phase, w:win ? win.id : -1,
-      f: fighters.map(f=>[Math.round(f.x), Math.round(f.y), Math.max(0, Math.round(f.hp)),
-        (f.alive ? 1 : 0) | (f.frozenUntil > gameClock ? 2 : 0) | (f.facingLeft ? 4 : 0) | (f.moving ? 8 : 0), effAtk(f), effDef(f)]),
-      c: cards.map(c=>{                                          // [état, n° de carte si révélée] ; 0 dos, 1 visible, 3 vient d'être utilisée, 2 disparue
-        let st = 0, di = -1;
-        if(c.up){ di = CARD_DEFS.indexOf(c.def); st = c.used ? 3 : 1; }
-        if(c.used){ if(!c._su) c._su = now; if(now - c._su > 2300) st = 2; }
-        return [st, di];
-      }),
-      t: terrains.filter(t=>t.revealed).map(t=>{ const R = terrainRect(g, t); return [TERRAIN_DEFS.indexOf(t.def), Math.round(g.x0 + R.c0*g.cw), Math.round(g.y0 + R.r0*g.ch), Math.round(R.s*g.cw), Math.round(R.s*g.ch)]; }),
-      pl};
-  }
-  function deny(pid, m){ send('deny', {pid, m}); }
-  function freePicks(pid){ remotePilots.forEach((c, id)=>{ if(c.pid === pid) remotePilots.delete(id); }); }
-
-  function onInput(p){
-    if(!p || typeof p.pid !== 'string') return;
-    const now = performance.now();
-    let pl = players.get(p.pid);
-    if(!pl){ pl = {pseudo:'?', seen:now}; players.set(p.pid, pl); }
-    pl.seen = now; if(p.pseudo) pl.pseudo = String(p.pseudo).slice(0, 20);
-    const c = ctrlOf(p.pid); if(c){ c.seen = now; c.pseudo = pl.pseudo; }
-    switch(p.k){
-      case 'hello': if(p.ni) sendInit(); break;
-      case 'pick': {
-        if(battleStarted) return deny(p.pid, 'Le duel a déjà commencé.');
-        const mid = Number(p.mid);
-        if(!Number.isInteger(mid) || mid < 0 || mid >= fighters.length) return;
-        if(mid === pilotId) return deny(p.pid, "Ce monstre est piloté par l'hôte.");
-        const cur = remotePilots.get(mid);
-        if(cur && cur.pid !== p.pid) return deny(p.pid, cur.pseudo + ' a déjà pris ce monstre.');
-        freePicks(p.pid);
-        remotePilots.set(mid, cur || {pid:p.pid, pseudo:pl.pseudo, dx:0, dy:0, target:null, upd:0, seen:now});
-        applyPilot(); break;
-      }
-      case 'unpick': if(!battleStarted){ freePicks(p.pid); applyPilot(); } break;
-      case 'move': if(c){
-        let x = num(p.x, -1, 1), y = num(p.y, -1, 1); const l = Math.hypot(x, y); if(l > 1){ x /= l; y /= l; }
-        c.dx = x; c.dy = y; c.upd = now; if(x || y) c.target = null;
-      } break;
-      case 'go': if(c){
-        const b = platformBounds();
-        c.target = {x:Math.max(b.minX, Math.min(b.maxX, num(p.x, -1e4, 1e4))), y:Math.max(b.minY, Math.min(b.maxY, num(p.y, -1e4, 1e4) - FOOT_DY))};
-        c.dx = c.dy = 0; c.upd = now;
-      } break;
-      case 'bye': players.delete(p.pid); if(!battleStarted) freePicks(p.pid); else { const cc = ctrlOf(p.pid); if(cc) cc.seen = -1e9; } applyPilot(); break;   // parti en plein duel : son monstre passe en pilote automatique à la prochaine vérification
-    }
-    showState();
-  }
-  function house(){          // nettoyage : joueurs partis -> leur monstre repasse en pilote automatique
-    const now = performance.now();
-    players.forEach((pl, pid)=>{ if(now - pl.seen > 20000){ players.delete(pid); if(!battleStarted) freePicks(pid); } });
-    remotePilots.forEach((c, id)=>{
-      if(battleStarted && now - c.seen > 8000){
-        remotePilots.delete(id); logLine(`📴 ${c.pseudo} est déconnecté : ${fighters[id].name} passe en pilote automatique.`);
-      } else if(!battleStarted && now - c.seen > 20000) remotePilots.delete(id);
-    });
-    applyPilot(); showState();
-  }
-  function open(){
-    ch = DO.live(ROOM);
-    ch.on('broadcast', {event:'in'}, m=>onInput(m.payload));
-    ch.subscribe(st=>{
-      if(st === 'SUBSCRIBED'){ showState(); $o('liveBtn').textContent = 'Fermer le salon de pilotage'; }
-      else if(st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') say('Connexion temps réel impossible (vérifie Supabase → Realtime). Réessaie.');
-    });
-    snapTimer = setInterval(()=>{ if(ch && players.size) send('state', buildSnap()); }, SNAP_MS);
-    houseTimer = setInterval(house, 1000);
-    $o('liveBtn').textContent = 'Fermer le salon de pilotage'; showState();
-  }
-  function close(){
-    clearInterval(snapTimer); clearInterval(houseTimer);
-    if(ch){ try{ send('closed', {}); ch.unsubscribe(); }catch(e){} }
-    ch = null; players.clear(); remotePilots.clear(); applyPilot();
-    $o('liveBtn').textContent = 'Ouvrir le salon de pilotage'; showState();
-  }
-  $o('liveBtn').addEventListener('click', ()=>{ if(ch) close(); else open(); });
-  showState();
-
-  // appelés par le reste du jeu
-  window.liveLog = (text, isWin)=>{ if(ch && players.size) send('log', {m:text, w:!!isWin}); };
-  window.liveShow = d=>{ if(ch && players.size) send('show', {n:d.name, i:d.img || null, ic:d.icon || '🃏', k:d.kind}); };
-  window.liveReset = ()=>{ remotePilots.forEach(c=>{ c.dx = c.dy = 0; c.target = null; }); if(ch) sendInit(); };
-  window.addEventListener('resize', ()=>{ clearTimeout(resizeT); resizeT = setTimeout(sendInit, 500); });
 })();
 </script>
 </body>

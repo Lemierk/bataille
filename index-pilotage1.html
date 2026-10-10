@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" class="gated">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -356,7 +356,6 @@
     animation:rainFade 3.9s linear forwards, rainMove .5s linear infinite;}
   @keyframes rainFade{0%{opacity:0;} 10%{opacity:1;} 85%{opacity:1;} 100%{opacity:0;}}
   @keyframes rainMove{from{background-position:0 0, 0 0;} to{background-position:0 120px, 0 200px;}}
-  html.gated body{visibility:hidden;}      /* page masquée tant que la connexion hôte n'est pas vérifiée */
   .mods{font-size:8.5px; line-height:1.15; white-space:nowrap; text-align:center; text-shadow:0 1px 2px #000;}
   .mods .up{color:#7fd18b;} .mods .down{color:#ff7a5c;}
 </style>
@@ -365,25 +364,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="duel-online.js"></script>
-<script>
-/* ================= VERROU HÔTE =================
-   Cette page ne s'ouvre qu'avec un compte hôte (is_host) connecté via connexion.html ; sinon on est renvoyé vers la connexion.
-   Attention : c'est un verrou d'AFFICHAGE (le fichier reste téléchargeable tel quel par une personne qui connaît son adresse).
-   La vraie protection des actions de l'hôte (ouvrir / clore une manche...) est assurée par les règles du serveur Supabase. */
-(function(){
-  const root = document.documentElement, DO = window.DuelOnline;
-  if(!DO){ root.classList.remove('gated'); return; }            // Supabase non configuré (mode local) : pas de verrou
-  const file = () => { const f = location.pathname.split('/').pop(); return /^[A-Za-z0-9_-]+\.html$/.test(f) ? f : 'index.html'; };
-  const goLogin = () => location.replace('connexion.html?next=' + encodeURIComponent(file()));
-  window.hostGateRedirect = goLogin;
-  const isHost = async () => { try{ const me = await DO.me(); return !!(me && me.is_host); }catch(e){ return false; } };
-  (async () => {
-    let ok = await isHost();
-    if(!ok){ await new Promise(r => setTimeout(r, 1200)); ok = await isHost(); }   // 2e essai : évite une fausse alerte sur un raté réseau
-    if(ok) root.classList.remove('gated'); else goLogin();
-  })();
-})();
-</script>
 <div class="wrap">
   <header>
     <h1>Duel Royal</h1>
@@ -1920,7 +1900,7 @@ initState();   // premier affichage des monstres
     try{ await DO.signIn($o('onPseudo').value, $o('onCode').value); $o('onCode').value = ''; await sync(); }
     catch(e){ say(e.message); $o('onLoginHint').textContent = e.message; }
   });
-  $o('onLogoutBtn').addEventListener('click', async ()=>{ await DO.signOut(); if(window.hostGateRedirect) return window.hostGateRedirect(); await sync(); });
+  $o('onLogoutBtn').addEventListener('click', async ()=>{ await DO.signOut(); await sync(); });
 
   $o('onOpenBtn').addEventListener('click', async ()=>{
     if(!gameIsFresh()) return say("Clique d'abord sur « Nouvelle bataille » : les mises s'ouvrent avant le début du duel.");

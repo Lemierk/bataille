@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Duel Royal — Espace hôte</title>
+<style>
+  :root{
+    --bg:#0c0d12; --panel:#181a24; --line:#2a2c3a; --gold:#c9a86a; --gold-bright:#e9cf8f; --ink:#e8e6df; --dim:#8b8c9a; --fire:#d1543b; --ok:#7fd18b;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: light){ :root{ --bg:#f2efe6; --panel:#fbf9f2; --line:#d8d0ba; --ink:#232016; --dim:#6b6555; } }
+  *{box-sizing:border-box;}
+  body{margin:0; min-height:100vh; background:radial-gradient(ellipse at 50% -10%, #26283a 0%, var(--bg) 55%) fixed; color:var(--ink);
+       font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;}
+  @media (prefers-color-scheme: light){ body{background:var(--bg);} }
+  .wrap{max-width:460px; margin:0 auto; padding:48px 14px 60px;}
+  h1{margin:0; text-align:center; font-size:26px; letter-spacing:.06em; color:var(--gold-bright); font-weight:600;}
+  .sub{text-align:center; color:var(--dim); font-size:13px; margin:4px 0 20px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px;}
+  .panel h2{margin:0 0 10px; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-bright); font-weight:600;}
+  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;}
+  input{font-family:inherit; font-size:16px; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:10px 11px; min-width:0; flex:1 1 100%;}
+  input:focus-visible, button:focus-visible, a:focus-visible{outline:2px solid var(--gold-bright); outline-offset:1px;}
+  button{font-family:inherit; font-size:15px; cursor:pointer; background:var(--panel); color:var(--gold-bright); border:1px solid var(--gold); border-radius:6px; padding:10px 16px;}
+  button:disabled{opacity:.5; cursor:default;}
+  button.primary{background:var(--gold); color:#14120c; font-weight:600;}
+  .hint{font-size:12px; color:var(--dim); font-style:italic;} .hint a{color:var(--gold-bright);}
+  .err{color:var(--fire); font-size:13px; min-height:18px;} .good{color:var(--ok);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Duel Royal</h1>
+  <div class="sub">Espace hôte — connecte-toi pour ouvrir le jeu</div>
+
+  <section class="panel" id="loginPanel" hidden>
+    <h2>Connexion hôte</h2>
+    <div class="row"><input type="text" id="pseudo" placeholder="Pseudo" maxlength="20" autocomplete="username" autocapitalize="off"></div>
+    <div class="row"><input type="password" id="code" placeholder="Code secret" autocomplete="current-password"></div>
+    <div class="row"><button class="primary" id="loginBtn">Me connecter</button></div>
+    <div class="err" id="err" role="alert"></div>
+    <div class="hint">Réservé à l'hôte. Tu veux parier ou piloter un monstre ? Va sur <a href="parier.html">la page des paris</a> ou <a href="jouer.html">la page de pilotage</a>.</div>
+  </section>
+
+  <section class="panel" id="deniedPanel" hidden>
+    <h2>Accès réservé à l'hôte</h2>
+    <p id="deniedText">Ce compte n'a pas les droits d'hôte.</p>
+    <div class="row"><button id="switchBtn">Changer de compte</button></div>
+    <div class="hint">Pour jouer en tant qu'ami : <a href="parier.html">page des paris</a> · <a href="jouer.html">page de pilotage</a>.</div>
+  </section>
+
+  <section class="panel" id="offline" hidden>
+    <h2>Pas encore configuré</h2>
+    <p>Le fichier <b>config.js</b> est absent ou incomplet : la connexion n'est pas disponible. Voir le guide d'installation.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="duel-online.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const DO = window.DuelOnline;
+
+// page à ouvrir après la connexion : uniquement un fichier .html du même dossier (pas de lien externe)
+function safeNext(search){
+  const n = new URLSearchParams(search).get('next') || '';
+  return /^[A-Za-z0-9_-]+\.html$/.test(n) && n !== 'connexion.html' ? n : 'index.html';
+}
+function go(url){ location.replace(url); }
+function show(id, on){ $(id).hidden = !on; }
+function msg(text, ok){ $('err').textContent = text || ''; $('err').className = ok ? 'err good' : 'err'; }
+
+async function afterLogin(me){
+  if(me && me.is_host){ msg('Bienvenue ' + me.pseudo + ' !', true); go(safeNext(location.search)); return; }
+  show('loginPanel', false); show('deniedPanel', true);
+  $('deniedText').textContent = me ? `Le compte « ${me.pseudo} » n'a pas les droits d'hôte.` : 'Connexion impossible.';
+}
+async function login(){
+  msg('Connexion…', true); $('loginBtn').disabled = true;
+  try{
+    await DO.signIn($('pseudo').value, $('code').value);
+    await afterLogin(await DO.me());
+  }catch(e){ msg(e.message); }
+  $('loginBtn').disabled = false;
+}
+$('loginBtn').addEventListener('click', login);
+$('code').addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
+$('pseudo').addEventListener('keydown', e => { if(e.key === 'Enter') $('code').focus(); });
+$('switchBtn').addEventListener('click', async () => { await DO.signOut(); show('deniedPanel', false); show('loginPanel', true); msg(''); });
+
+(async function boot(){
+  if(!DO){ show('offline', true); return; }
+  let me = null;
+  try{ me = await DO.me(); }catch(e){}
+  if(me) return afterLogin(me);                 // déjà connecté : hôte -> on ouvre le jeu, sinon message
+  show('loginPanel', true);
+})();
+</script>
+</body>
+</html>
